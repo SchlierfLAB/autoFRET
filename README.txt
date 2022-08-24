@@ -11,7 +11,9 @@ way more easy.
 Open the terminal and navigate to the project directory. Afterwards run the following command:
 
 ```bash
+
 $ conda env create --name pyBatTreeENV --file enviroment.yml
+
 ```
 you can also change the name of the env. by changing "pyBatTreeENV" in the command above
 
