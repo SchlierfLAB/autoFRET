@@ -1,0 +1,4 @@
+# Ignore ide configs
+*.iws
+workspace.xml
+tasks.xml
