@@ -1,7 +1,8 @@
 # ignore chache changes
 __pycache__/
+*.pyc
 
 # Ignore ide configs
 *.iws
 workspace.xml
-tasks.xml
+tasks.xmlpwd
