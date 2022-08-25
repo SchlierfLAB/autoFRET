@@ -932,6 +932,6 @@ if __name__ == '__main__':
     app.setApplicationDisplayName("pyBat")
     app.setWindowIcon(QtGui.QIcon('requirements/batIcon.png'))
     w = MainWindow()
-    w.setWindowTitle('pyBat')
+    w.setWindowTitle('parBat')
     w.show()
     sys.exit(app.exec_())
