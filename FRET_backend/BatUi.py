@@ -141,9 +141,9 @@ class Ui_MainWindow(object):
         self.minTotal.setMaximumWidth(40)
         self.minTotal.setText('70')
 
-        gr_text = QLabel('G+R')
+        gr_text = QLabel('DD + DA')
         gr_text.setFont(QFont(font_style, font_size))
-        r0_text = QLabel('R0')
+        r0_text = QLabel('AA')
         r0_text.setFont(QFont(font_style, font_size))
 
         min_pho_text = QLabel('min.\nPhotons')
@@ -263,10 +263,10 @@ class Ui_MainWindow(object):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
         self.groupBox_2.setTitle(_translate("MainWindow", "Lifetime Windows"))
-        self.GG_GR_Lifetime_button.setText(_translate("MainWindow", "GG + GR"))
-        self.GR_Lifetime_button.setText(_translate("MainWindow", "GR"))
+        self.GG_GR_Lifetime_button.setText(_translate("MainWindow", "DD + DA"))
+        self.GR_Lifetime_button.setText(_translate("MainWindow", "AA"))
         self.groupBox.setTitle(_translate("MainWindow", "Show"))
-        self.BurstButton.setText(_translate("MainWindow", "Burst"))
+        self.BurstButton.setText(_translate("MainWindow", "Raw data"))
         self.AnalyzeButton.setText(_translate("MainWindow", "Analyze"))
         self.IPTButton.setText(_translate("MainWindow", "IPT Histogram"))
         self.menuFile.setTitle(_translate("MainWindow", "File"))
