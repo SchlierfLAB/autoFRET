@@ -262,8 +262,12 @@ class tickwindow_left_save(QDialog):
             self.grid.addWidget(self.settings_file_textbox,5,0)
             self.resize(300,150)
         else:
-            self.settings_file_textbox.hide()
-            self.resize(150,100)
+            try:
+                self.settings_file_textbox.hide()
+                self.resize(150,100)
+            except AttributeError:
+                # if no text box was opened before
+                return
 
 
     def checkboxChanged(self):
