@@ -25,4 +25,3 @@ $ conda activate <env name>
 ```
 
 Now run the pyBat or pyTree file. For detailed information on the program refer to the git Wiki or the Usermanual in the Texts folder.
-
