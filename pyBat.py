@@ -165,6 +165,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.actionExprotSettings.triggered.connect(self.export_settings)
         self.actionImportSettings.triggered.connect(self.import_settings)
 
+        self.minTotalTick.clicked.connect(self.minTot_Phot_controller)
+        self.grBox.setDisabled(True)
+        self.r0Box.setDisabled(True)
+
         # Set up file dialog window
         self.drag_drop_files = File_DD_Dialog()
 
@@ -189,6 +193,14 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         # well thats defined for some reason :D
         self.BinSize = 1
+
+    def minTot_Phot_controller(self):
+        if self.minTotalTick.isChecked():
+            self.grBox.setDisabled(True)
+            self.r0Box.setDisabled(True)
+        else:
+            self.grBox.setDisabled(False)
+            self.r0Box.setDisabled(False)
 
 
     def openFileSlot(self):
