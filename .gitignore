@@ -1,0 +1,9 @@
+# ignore chache changes
+__pycache__
+.idea
+*.pyc
+
+# Ignore ide configs
+*.iws
+workspace.xml
+tasks.xmlpwd

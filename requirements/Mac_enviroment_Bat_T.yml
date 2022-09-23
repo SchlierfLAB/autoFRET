@@ -1,12 +1,12 @@
-name: pyFret
+name: pyBatTreeENV
 channels:
   - conda-forge
   - defaults
 dependencies:
   - bzip2=1.0.8=h0d85af4_4
-  - ca-certificates=2021.10.26=hecd8cb5_2
+  - ca-certificates=2022.07.19=hecd8cb5_0
   - cairo=1.16.0=h8023c5d_1
-  - certifi=2020.12.5=py36hecd8cb5_0
+  - certifi=2021.5.30=py36h79c6626_0
   - cycler=0.11.0=pyhd8ed1ab_0
   - dbus=1.13.18=h18a8e69_0
   - expat=2.4.1=he49afe7_0
@@ -22,6 +22,7 @@ dependencies:
   - icu=58.2=h0a44026_1000
   - jasper=2.0.33=h013e400_0
   - jbig=2.1=h0d85af4_2003
+  - joblib=1.1.0=pyhd8ed1ab_0
   - jpeg=9d=hbcb3906_0
   - kiwisolver=1.3.1=py36h23ab428_0
   - krb5=1.19.2=hcfbf3a7_2
@@ -38,6 +39,7 @@ dependencies:
   - libglib=2.70.0=hf1fb8c0_1
   - libiconv=1.16=haf1e3a3_0
   - liblapack=3.9.0=13_osx64_mkl
+  - libllvm10=10.0.1=h009f743_3
   - libllvm11=11.1.0=hd011deb_2
   - libopencv=3.4.2=h7c891bd_1
   - libopus=1.3.1=hc929b4f_1
@@ -49,6 +51,7 @@ dependencies:
   - libxml2=2.9.12=hcdb78fc_0
   - libzlib=1.2.11=h9173be1_1013
   - llvm-openmp=12.0.1=hda6cdc1_1
+  - llvmlite=0.36.0=py36h6e2eaf8_0
   - lz4-c=1.9.3=he49afe7_1
   - matplotlib=3.3.4=py36hecd8cb5_0
   - matplotlib-base=3.3.4=py36h4ea959b_0
@@ -58,11 +61,12 @@ dependencies:
   - ncurses=6.2=h2e338ed_4
   - nspr=4.32=hcd9eead_0
   - nss=3.71=h31e2bf1_0
+  - numba=0.53.0=py36h7eb7284_0
   - numpy=1.19.5=py36h08b5fde_2
   - olefile=0.46=pyh9f0ad1d_1
   - opencv=3.4.2=py36h6fd60c2_1
   - openjpeg=2.4.0=h6e7aa92_1
-  - openssl=1.1.1m=hca72f7f_0
+  - openssl=1.1.1q=hfe4f2af_0
   - pandas=1.1.5=py36h2be6da3_0
   - pcre=8.45=he49afe7_0
   - pillow=8.3.2=py36h950f3bb_0
@@ -100,4 +104,4 @@ dependencies:
     - python-dotenv==0.19.1
     - qt5-applications==5.15.2.2.2
     - qt5-tools==5.15.2.1.2
-prefix: /Users/mbpro/opt/anaconda3/envs/pyFret
+prefix: /Users/mbpro/opt/anaconda3/envs/pyBatTreeENV

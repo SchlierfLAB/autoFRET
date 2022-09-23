@@ -165,6 +165,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.actionExprotSettings.triggered.connect(self.export_settings)
         self.actionImportSettings.triggered.connect(self.import_settings)
 
+        self.minTotalTick.clicked.connect(self.minTot_Phot_controller)
+        self.grBox.setDisabled(True)
+        self.r0Box.setDisabled(True)
+
         # Set up file dialog window
         self.drag_drop_files = File_DD_Dialog()
 
@@ -189,6 +193,14 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         # well thats defined for some reason :D
         self.BinSize = 1
+
+    def minTot_Phot_controller(self):
+        if self.minTotalTick.isChecked():
+            self.grBox.setDisabled(True)
+            self.r0Box.setDisabled(True)
+        else:
+            self.grBox.setDisabled(False)
+            self.r0Box.setDisabled(False)
 
 
     def openFileSlot(self):
@@ -627,7 +639,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             arrData = []
 
             # get folder dir from file dir --> Robust since if the file can be handeld the folder is also correct
-            folder_path = '/'.join(ht3_locations[folder][0].split('/')[0:-1])
+            folder_path = '/'.join(ht3_locations[folder][0].translate(str.maketrans({'/': '\\'})).split('\\')[0:-1])
             print(folder_path)
 
             # save empty file for usage in getBurstAll
@@ -657,8 +669,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 File_counter += 1
                 print(f'Start analyzing file {File_counter} of {len(ht3_locations[folder])}\n')
 
-                fileName = file.split('/')[-1]
-                folderName = '/'.join(file.split('/')[0:-1])
+                file = file.translate(str.maketrans({'/': '\\'}))
+                fileName = file.split('\\')[-1]
+                folderName = '/'.join(file.split('\\')[0:-1])
+
                 BurstData = getBurstAll(fileName, folderName, self.suffix, lastBN, self.Brd_GGR, self.Brd_RR,self.threIT \
                                         , self.threITN, self.minPhs, 10, self.newIRF_G, meanIRFG, self.newIRF_R, \
                                         meanIRFR, self.Brd_GGR, self.Brd_RR, self.dtBin, self.setLeeFilter, \
