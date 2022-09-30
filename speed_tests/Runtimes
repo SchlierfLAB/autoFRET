@@ -1,0 +1,15 @@
+Default run single core performance:
+
+Finished in 478.69442200660706 seconds
+
+PyPy 3.10 single core:
+
+Finished in 2118.442211151123 seconds
+
+
+Default run single core performance right after PyPy with test_env_auto python 3.6:
+
+Finished in 484.1124758720398 seconds
+
+PyPy using Python 3.8 single core:
+
