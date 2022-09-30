@@ -6,4 +6,9 @@ __pycache__
 # Ignore ide configs
 *.iws
 workspace.xml
-tasks.xmlpwd
+tasks.xml
+
+speed_tests
+
+FRET_backend/numba_getBurstAll.py
+FRET_backend/get_burst_all_loop_optimized.py
