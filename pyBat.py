@@ -790,8 +790,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         # read Setting Values
         # get integer values of boxes
         self.setLeeFilter = int(self.leeFilterBox.text())
-        self.gGG = int(self.gGGBox.text())
-        self.gRR = int(self.gRRBox.text())
+        self.gGG = float(self.gGGBox.text())
+        self.gRR = float(self.gRRBox.text())
         self.threIT = float(self.maxInterTime.text())
         self.threITN = float(self.minInterTimeNoise.text())
         self.minPhs = int(self.minTotal.text())
