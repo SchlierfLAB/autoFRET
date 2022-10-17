@@ -1,7 +1,7 @@
 import scipy.io as sio
 
 def get_input(matlab_workspace_file =
-              '/Users/mbpro/Desktop/Work/WHK Schlierf Group/pyFRET_ph/Sample_Data/example_function_input.mat'):
+              '/Users/philipp/Desktop/Work/WHK Schlierf Group/pyFRET_ph/Sample_Data/example_function_input.mat'):
 
     inputs = sio.loadmat(matlab_workspace_file)
 
@@ -30,5 +30,7 @@ def get_input(matlab_workspace_file =
     return threIT, threIT2, minPhs, threAveT, IRF_G, meanIRFG, IRF_R, meanIRFR, dtBin, setLeeFilter, boolFLA, \
            gGG, gRR, boolTotal, minGR, minR0, boolPostA, checkInner
 
-
+if __name__ == '__main__':
+    threIT, threIT2, minPhs, threAveT, IRF_G, meanIRFG, IRF_R, meanIRFR, dtBin, setLeeFilter, boolFLA, \
+    gGG, gRR, boolTotal, minGR, minR0, boolPostA, checkInner = get_input()
 

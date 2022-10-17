@@ -11,6 +11,7 @@ from PyQt5.QtWidgets import QGridLayout,  QApplication
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import *
 import sys
+from OnTheFlyBurst import OTF_Burst
 
 class File_DD_Dialog(QDialog):
 
@@ -20,6 +21,7 @@ class File_DD_Dialog(QDialog):
         self.setAcceptDrops(True)
         self.grid = QGridLayout()
         self.resize(250,200)
+
 
 
         # total 4 elements for 200 pixels -> boxes y coords -> 1. 1-50, 2. 51-101, 3. 102-152
@@ -81,6 +83,7 @@ class File_DD_Dialog(QDialog):
         self.grid.addWidget(self.file4Button, 3,1)
 
         self.setLayout(self.grid)
+
 
     def folder_button1_select(self):
         self.first_file = QtWidgets.QFileDialog.getExistingDirectory(
@@ -162,7 +165,13 @@ class File_DD_Dialog(QDialog):
         self.file_dir_dict['HHD1'] = self.file3Widget.text()
         self.file_dir_dict['HHD2'] = self.file4Widget.text()
 
+        OTF_Burst(arget_folder=self.file1Widget.text(), setting_file=self.file2Widget.text(),
+                  first_hhd=self.file3Widget.text(), second_hhd=self.file4Widget.text())
+
         self.close()
+
+
+
 
 
 if __name__ == '__main__':
@@ -174,4 +183,7 @@ if __name__ == '__main__':
     w.setWindowTitle('OTF-Bat')
     w.show()
     sys.exit(app.exec_())
+
+
+
 

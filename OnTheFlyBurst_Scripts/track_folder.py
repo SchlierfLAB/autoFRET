@@ -7,21 +7,12 @@ import os
 def folder_for_file(fPath):
     return os.path.basename(os.path.dirname(fPath))
 
+def on_create_ht3_file(self):
+    print(f'Sub detect: {self.src_path}')
 
-def on_create_ht3_file(event):
-    print(f'Sub detect: {event.src_path}')
+    file_dir = os.path.dirname(self.src_path)
 
-    file_dir = os.path.dirname(event.src_path)
-
-    file_name = os.path.basename(event.src_path)
-
-
-
-
-    if file_dir not in tracked_locs.keys():
-        tracked_locs[file_dir] = 0
-
-
+    file_name = os.path.basename(self.src_path)
 
 def track_ht3_folder(dir):
 
