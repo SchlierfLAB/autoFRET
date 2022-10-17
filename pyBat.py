@@ -384,6 +384,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def get_Brd_GGR(self, event):
 
         self.Brd_GGR.append(round(event.xdata))
+        self.Brd_GGR = [int(x) for x in self.Brd_GGR]
 
         # Brd_GGR are the selected x coordinates of the top plot
         if len(self.Brd_GGR) == 2:
@@ -416,6 +417,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def get_Brd_RR(self, event):
 
         self.Brd_RR.append(round(event.xdata))
+        self.Brd_RR = [int(x) for x in self.Brd_RR]
 
         if len(self.Brd_RR) == 2:
 
