@@ -25,7 +25,7 @@ def track_ht3_folder(dir):
     ignore_patterns = None
     ignore_dirs = True
     case_sensitive = True
-    event_handler = PatternMatchingEventHandler(None, ignore_patterns, ignore_dirs, case_sensitive)
+    event_handler = PatternMatchingEventHandler(patterns, ignore_patterns, ignore_dirs, case_sensitive)
 
 
     event_handler.on_created = on_create_ht3_file
@@ -47,5 +47,5 @@ def track_ht3_folder(dir):
 if __name__ == '__main__':
 
     # init folder
-    root_dir = '/Users/philipp/Desktop/Work/WHK Schlierf Group/smFRET_Software/speed_tests/eval_folder'
+    root_dir = '/Users/philipp/Desktop/Work/WHK Schlierf Group/smFRET_Software/speed_tests/eval_folder/'
     track_ht3_folder(root_dir)

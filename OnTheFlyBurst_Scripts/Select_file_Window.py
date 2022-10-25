@@ -11,11 +11,12 @@ from PyQt5.QtWidgets import QGridLayout,  QApplication
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import *
 import sys
-from OnTheFlyBurst import OTF_Burst
+#from OnTheFlyBurst import OTF_Burst
 
 class File_DD_Dialog(QDialog):
 
     def __init__(self, parent=None):
+
         super(File_DD_Dialog, self).__init__(parent)
         self.setWindowTitle("Drag and Drop")
         self.setAcceptDrops(True)
@@ -79,7 +80,7 @@ class File_DD_Dialog(QDialog):
         # file 4 Button
         self.file4Button = QPushButton('')
         self.file4Button.setIcon(icon)
-        self.file4Button.clicked.connect(self.folder_button3_select)
+        self.file4Button.clicked.connect(self.folder_button4_select)
         self.grid.addWidget(self.file4Button, 3,1)
 
         self.setLayout(self.grid)
@@ -164,9 +165,6 @@ class File_DD_Dialog(QDialog):
         self.file_dir_dict['Settings'] = self.file2Widget.text()
         self.file_dir_dict['HHD1'] = self.file3Widget.text()
         self.file_dir_dict['HHD2'] = self.file4Widget.text()
-
-        OTF_Burst(arget_folder=self.file1Widget.text(), setting_file=self.file2Widget.text(),
-                  first_hhd=self.file3Widget.text(), second_hhd=self.file4Widget.text())
 
         self.close()
 
