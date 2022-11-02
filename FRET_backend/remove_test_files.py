@@ -22,6 +22,8 @@ def get_locs(root_dir):
                     bins.append(os.path.join(folder,f))
                 elif f.endswith('.npy'):
                     hists.append(os.path.join(folder,f))
+                elif f.endswith('.txt'):
+                    hists.append(os.path.join(folder, f))
 
     return (bins, hists)
 
@@ -34,10 +36,11 @@ def kill_files(file_dirs):
 
 
 if __name__ == '__main__':
-    print('Deleting HIST and .bin files from folder')
+    print('Deleting .npy, .txt, and .bin files from folder')
 
     #folder_loc = get_parent()
-    folder_loc = 'U:/Techniques/High-Troughput TCSPC/smFRET_Software/Sample_Data/typical_small_test'
+    folder_loc = '/Users/philipp/Desktop/Work/WHK Schlierf Group/smFRET_Software/speed_tests' \
+                 '/20220627_TM34_muants_Luma_Alexaluma_FINALONLYLUMACAFTOR'
 
     locs = get_locs(folder_loc)
 

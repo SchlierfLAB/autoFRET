@@ -54,7 +54,7 @@ def FRET_2CDE(tA, tD, tau):
 def Alex_2CDE(tAex, tDex, tau):
 
     KDE_DexiAlex = np.zeros(len(tDex))
-    KDE_DexiDex =  np.zeros(len(tDex))
+    KDE_DexiDex = np.zeros(len(tDex))
 
     for i in range(len(tDex)):
         KDE_DexiAlex[i] = KDE(tDex[i], tAex, tau)

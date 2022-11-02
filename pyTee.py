@@ -132,8 +132,8 @@ class SettingsWindow(QtWidgets.QWidget, Ui_Settings):
         self.leftTau.setValidator(self.onlyDouble)
         self.leftTau2.setValidator(self.onlyDouble)
         self.leftdT.setValidator(self.onlyInt)
-        self.leftrGG.setValidator(self.onlyInt)
-        self.leftrRR.setValidator(self.onlyInt)
+        self.leftrGG.setValidator(self.onlyDouble)
+        self.leftrRR.setValidator(self.onlyDouble)
 
         # set for upper
 
@@ -152,8 +152,8 @@ class SettingsWindow(QtWidgets.QWidget, Ui_Settings):
         self.rightTau.setValidator(self.onlyDouble)
         self.rightTau2.setValidator(self.onlyDouble)
         self.rightdT.setValidator(self.onlyInt)
-        self.rightrGG.setValidator(self.onlyInt)
-        self.rightrRR.setValidator(self.onlyInt)
+        self.rightrGG.setValidator(self.onlyDouble)
+        self.rightrRR.setValidator(self.onlyDouble)
 
         # single inputs
 
@@ -163,10 +163,10 @@ class SettingsWindow(QtWidgets.QWidget, Ui_Settings):
         self.gamma.setValidator(self.onlyDouble)
         self.alpha.setValidator(self.onlyDouble)
         self.delta.setValidator(self.onlyDouble)
-        self.gGG.setValidator(self.onlyInt)
-        self.gRR.setValidator(self.onlyInt)
-        self.aveBG.setValidator(self.onlyInt)
-        self.aveBR.setValidator(self.onlyInt)
+        self.gGG.setValidator(self.onlyDouble)
+        self.gRR.setValidator(self.onlyDouble)
+        self.aveBG.setValidator(self.onlyDouble)
+        self.aveBR.setValidator(self.onlyDouble)
         self.aveBR0.setValidator(self.onlyInt)
         self.tauD0.setValidator(self.onlyDouble)
 
@@ -1093,7 +1093,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.hTau2 = self.hTau2 + hTau2new
         self.hrGG = self.hrGG + hrGGnew
         self.hrRR = self.hrRR + hrRRnew
-
 
 
         # [self.hEnew, I] = histc(self.E, self.edges)
