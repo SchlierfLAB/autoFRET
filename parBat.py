@@ -589,10 +589,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         str_pathdN = folder_path + '/backHIST.npy'
         np.save(str_pathdN, dataN)
 
-        # define six subplots per folder to be shown to the user --> row major for accessing the subplots
-        # figure set to be in HD (1920x1080)
-
-        plt.ion()
         lastBN = 0
         File_counter = 0
         print(f'\nWorker on folder: {folder}')
@@ -610,56 +606,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                                     self.boolFLA, self.gGG, self.gRR, self.boolTotal, self.minGR, self.minR0, \
                                     self.boolPostA, checkInner)
             lastBN += len(BurstData)
-
-            if BurstData.any():
-                NG = BurstData[:, 1]
-                NGII = BurstData[:, 2]
-                NGT = BurstData[:, 3]
-                NR = BurstData[:, 4]
-                NRII = BurstData[:, 5]
-                NRT = BurstData[:, 6]
-                NR0 = BurstData[:, 7]
-                NR0II = BurstData[:, 8]
-                NR0T = BurstData[:, 9]
-                BGII = BurstData[:, 10]
-                BGT = BurstData[:, 11]
-                BRII = BurstData[:, 12]
-                BRT = BurstData[:, 13]
-                BR0II = BurstData[:, 14]
-                BR0T = BurstData[:, 15]
-                TB = BurstData[:, 16]
-                valueCDE = BurstData[:, 17]
-                valueCDE2 = BurstData[:, 18]
-                dtGR_TR0 = BurstData[:, 19]
-                tauArrD = BurstData[:, 20]
-                tauArrA = BurstData[:, 21]
-                FGII = NGII - BGII * TB
-                FGT = NGT - BGT * TB
-                FRII = NRII - BRII * TB
-                FRT = NRT - BRT * TB
-                FR0II = NR0II - BR0II * TB
-                FR0T = NR0T - BR0T * TB
-
-                FG = FGII + FGT
-                FR = FRII + FRT
-                FR0 = FR0II + FR0T
-
-                E = FR / (FG + FR)
-                S = (FG + FR) / (FG + FR + FR0)
-                rGG = (FGII - FGT) / (FGII + 2 * FGT)
-                rRR = (FR0II - FR0T) / (FR0II + 2 * FR0T)
-
-                # perform dynamic append on list(arrData)
-                # if its empty just fill else stack current iteration to the old one
-
-                if arrData == []:
-                    arrData = np.array([E, S, rGG, rRR, tauArrD, tauArrA, valueCDE, valueCDE2, dtGR_TR0]).T
-
-
-                else:
-                    arrData = np.append(arrData,
-                                        np.array([E, S, rGG, rRR, tauArrD, tauArrA, valueCDE, valueCDE2,
-                                                  dtGR_TR0]).T, axis=0)
 
 
     def AnalyzeButtonEvent(self):
@@ -706,10 +652,21 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         ht3_locations = collections.OrderedDict(sorted(ht3_locations.items()))
 
-        threds = multiprocessing.cpu_count() # often confused with cores
+        workers = -2 # max. num of concurrently running jobs -> -2 == All but one are used
         start = time.time()
-        Parallel(n_jobs=threds, backend='threading')(delayed(self.burst_fun)(folder, ht3_locations, meanIRFG, meanIRFR) for folder in ht3_locations.keys())
-        print(f'Took {time.time()-start} seconds for analyzing the folder')
+
+        # Backend loky is a robust multiprocessing backend with the disadvantage of creating a little more
+        # overhead and communication required than "pure" multiprocessing. Still works very good.
+        # multi threading does not work out due to global interpreter locks introduced by heavy object usage.
+        # Simpler: Leads to a situation in which all parallel processes have to wait for a single one that works on a
+        # very large file.
+        Parallel(n_jobs=workers, prefer='processes')(delayed(self.burst_fun)(folder, ht3_locations, meanIRFG, meanIRFR)\
+                                                     for folder in ht3_locations.keys())
+
+        print(f'Took {time.time()-start} seconds for analyzing the Files')
+
+        file_object = open('/Users/philipp/Desktop/Work/WHK Schlierf Group/smFRET_Software/speed_tests/times.txt', 'a')
+        file_object.write(f'Time for ParBat run: {time.time()-start}')
 
     def IPTButtonEvent(self):
         # event after IPT button pressed
