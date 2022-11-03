@@ -13,4 +13,4 @@ tasks.xml
 
 
 FRET_backend/numba_getBurstAll.py
-FRET_backend/get_burst_all_loop_optimized.py
+FRET_backend/GetBurstAllMultiprocessing.py

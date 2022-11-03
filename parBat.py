@@ -1,5 +1,6 @@
 # Import GUI
 from FRET_backend.BatUi import Ui_MainWindow
+from FRET_backend.GetBurstAllMultiprocessing import par_burst
 
 # Basic imports
 import sys
@@ -624,34 +625,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         folder = QtWidgets.QFileDialog.getExistingDirectory(
             self, "Select Directory")
 
-        # get subfolder and file locations
-
-        ht3_locations = dict()
-        try:
-            for path, subdirs, files in os.walk(folder):
-                for name in files:
-                    if name.endswith('.ht3'):
-                        try:
-                            ht3_locations[name[0:3]] = ht3_locations[name[0:3]] + [os.path.join(path, name)]
-                        except KeyError:
-                            ht3_locations[name[0:3]] = [os.path.join(path, name)]
-
-        except FileNotFoundError:
-            return
-
-        def sort_fun_key(string):
-            string = string.split('/')[-1]
-            if len(string) == 10:
-                return string[0:6]
-            else:
-                return string[0:4] + '0' + string[4]
-
-        # sort the folders
-        for keys in ht3_locations.keys():
-            ht3_locations[keys] = sorted(ht3_locations[keys], key=sort_fun_key)
-
-        ht3_locations = collections.OrderedDict(sorted(ht3_locations.items()))
-
         workers = -2 # max. num of concurrently running jobs -> -2 == All but one are used
         start = time.time()
 
@@ -660,14 +633,19 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         # multi threading does not work out due to global interpreter locks introduced by heavy object usage.
         # Simpler: Leads to a situation in which all parallel processes have to wait for a single one that works on a
         # very large file.
-        Parallel(n_jobs=workers, prefer='processes')(delayed(self.burst_fun)(folder, ht3_locations, meanIRFG, meanIRFR)\
-                                                     for folder in ht3_locations.keys())
 
+        par_burst(folder, self.suffix, self.Brd_GGR, self.Brd_RR, self.threIT, self.threITN, self.minPhs, self.IRF_G,
+                  meanIRFG, self.IRF_R, meanIRFR, self.dtBin, self.setLeeFilter, self.boolFLA, self.gRR, self.gGG,
+                  self.boolTotal, self.minGR, self.minR0, self.boolPostA, workers)
+
+
+        # Todo: Del timer before publish :P
         print(f'Took {time.time()-start} seconds for analyzing the Files')
-
-        file_object = open('/Users/philipp/Desktop/Work/WHK Schlierf Group/smFRET_Software/speed_tests/times.txt', 'a')
-        file_object.write(f'Time for ParBat run: {time.time()-start}')
-
+        try:
+            file_object = open('/Users/philipp/Desktop/Work/WHK Schlierf Group/smFRET_Software/speed_tests/times.txt', 'a')
+            file_object.write(f'Time for ParBat run: {time.time()-start}')
+        except:
+            pass
     def IPTButtonEvent(self):
         # event after IPT button pressed
         # --> Placeholder backend
