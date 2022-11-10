@@ -2,11 +2,27 @@
 
 ## Installation
 
+### Python packages 
+- Numpy
+- Pandas 
+- PyQt 
+- Watchdog 
+- Numba 
+- Scipy
+- Matplotlib
+- Joblib
+- Opencv
+
 ### Quick Setup
 For a quick setup make sure that ANACONDA is installed on your system. If not please visit https://anaconda.org and
 install the free to use software. ANACONDA is not required in order to use the software but it will make life 
 way more easy. You can run the autoinstall.py script which is currently under development. If the installaition
 fails please follow the steps below.
+
+We provide an autoinstaller tool with the software. For this you need to run the autoinstall.py file. It will 
+automatically set up a conda environment. Please note that the installer is in an early development state
+and might not work on all systems. If the installation fails please follow the next steps in order to install 
+the required python libraries. 
 
 Open the terminal and navigate to the project requirements directory. Afterwards run the following command (select
 the file corresponding to your OS):
