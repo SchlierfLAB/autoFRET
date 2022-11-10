@@ -25,3 +25,14 @@ $ conda activate <env name>
 ```
 
 Now run the pyBat or pyTree file. For detailed information on the program refer to the git Wiki or the Usermanual in the Texts folder.
+
+### Performance 
+The performance is evaluated on a full 96 well measurement containing roughly 8GB of data.
+Systems: 
+- MacOS: MacBook pro with an M1 pro 4 core CPU and 16GB memory
+- Windows: Workstation with an Intel Xeon E3-1270 4 core CPU and 32GB memory
+
+| Tool               | MacBook pro | Windows Workstation |
+|--------------------|----------|---------------------|
+| ParBat 7 processes | 3 Hours  | ??                  |
+| Single Run         | 24 Hours | ??                  |

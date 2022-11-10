@@ -167,7 +167,7 @@ class SettingsWindow(QtWidgets.QWidget, Ui_Settings):
         self.gRR.setValidator(self.onlyDouble)
         self.aveBG.setValidator(self.onlyDouble)
         self.aveBR.setValidator(self.onlyDouble)
-        self.aveBR0.setValidator(self.onlyInt)
+        self.aveBR0.setValidator(self.onlyDouble)
         self.tauD0.setValidator(self.onlyDouble)
 
 class tickwindow_left_save(QDialog):
