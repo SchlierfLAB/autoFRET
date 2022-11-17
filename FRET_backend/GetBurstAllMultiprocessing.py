@@ -650,7 +650,6 @@ def par_burst(eval_folder_path, suffix, Brd_GGR, Brd_RR, threIT, threIT2, minPhs
 
     eval_folder = get_files(eval_folder_path)
 
-    print(eval_folder)
 
     print(f'Test parrallel on {threads} threads')
 

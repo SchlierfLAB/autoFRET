@@ -49,6 +49,6 @@ Systems:
 - Windows: Workstation with an Intel Xeon E3-1270 4 core CPU and 32GB memory
 
 | Tool               | MacBook pro | Windows Workstation |
-|--------------------|----------|---------------------|
-| ParBat 7 processes | 3 Hours  | ??                  |
-| Single Run         | 24 Hours | ??                  |
+|--------------------|----------|--------------------|
+| ParBat 7 processes | 3 Hours  | 13 Hours |
+| Single Run         | 24 Hours | ??                 |
