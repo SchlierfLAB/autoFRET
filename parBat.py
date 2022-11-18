@@ -864,9 +864,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 if __name__ == '__main__':
 
     app = QApplication(sys.argv)
-    app.setApplicationDisplayName("pyBat")
+    app.setApplicationDisplayName("pyBAT")
     app.setWindowIcon(QtGui.QIcon('requirements/batIcon.png'))
     w = MainWindow()
-    w.setWindowTitle('parBat')
+    w.setWindowTitle('pyBAT')
     w.show()
     sys.exit(app.exec_())

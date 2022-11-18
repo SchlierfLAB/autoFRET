@@ -821,7 +821,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         if self.rightComboBox.currentIndex() == 0:
             self.rightGraph.canvas.ax.clear()
             self.rightGraph.canvas.ax.contourf(self.edges, self.keys, self.hE_np.T, locator=ticker.MaxNLocator(),
-                                               cmap="coolwarm")
+                                               cmap="jet")
             # self.rightGraph.canvas.ax.plot([-0.1+self.BinOffset,1.1+self.BinOffset], [self.sliderVal,self.sliderVal])
             self.rightGraph.canvas.ax.yaxis.set_major_locator(ticker.MaxNLocator())
             self.rightGraph.canvas.ax.invert_yaxis()
@@ -834,7 +834,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         elif self.rightComboBox.currentIndex() == 1:
             self.rightGraph.canvas.ax.clear()
             self.rightGraph.canvas.ax.contourf(self.edges, self.keys, self.hS_np.T, locator=ticker.MaxNLocator(),
-                                               cmap="coolwarm")
+                                               cmap="jet")
             # self.rightGraph.canvas.ax.plot([-0.1+self.BinOffset,1.1+self.BinOffset], [self.sliderVal,self.sliderVal])
             self.rightGraph.canvas.ax.yaxis.set_major_locator(ticker.MaxNLocator())
             self.rightGraph.canvas.ax.invert_yaxis()
@@ -862,7 +862,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             # Tau(D(A)) histogram
             self.rightGraph.canvas.ax.clear()
             self.rightGraph.canvas.ax.contourf(self.edgesTau, self.keys, self.hTau_np.T, locator=ticker.MaxNLocator(),
-                                               cmap="coolwarm")
+                                               cmap="jet")
             self.rightGraph.canvas.ax.yaxis.set_major_locator(ticker.MaxNLocator())
             self.rightGraph.canvas.ax.invert_yaxis()
             self.rightGraph.canvas.ax.set_xlabel("$tau_{D(A)}$ (ns)")
@@ -876,7 +876,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             # Tau(A) histogram
             self.rightGraph.canvas.ax.clear()
             self.rightGraph.canvas.ax.contourf(self.edgesTau, self.keys, self.hTau2_np.T, locator=ticker.MaxNLocator(),
-                                               cmap="coolwarm")
+                                               cmap="jet")
             self.rightGraph.canvas.ax.yaxis.set_major_locator(ticker.MaxNLocator())
             self.rightGraph.canvas.ax.invert_yaxis()
             self.rightGraph.canvas.ax.set_xlabel("$tau_{A}$ (ns)")
@@ -890,7 +890,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             # rGG histogram
             self.rightGraph.canvas.ax.clear()
             self.rightGraph.canvas.ax.contourf(self.edgesrGG, self.keys, self.hrGG_np.T, locator=ticker.MaxNLocator(),
-                                               cmap="coolwarm")
+                                               cmap="jet")
             self.rightGraph.canvas.ax.yaxis.set_major_locator(ticker.MaxNLocator())
             self.rightGraph.canvas.ax.invert_yaxis()
             self.rightGraph.canvas.ax.set_xlabel("$r_{GG}$")
@@ -904,7 +904,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             # rRR histogram
             self.rightGraph.canvas.ax.clear()
             self.rightGraph.canvas.ax.contourf(self.edgesrGG, self.keys, self.hrRR_np.T, locator=ticker.MaxNLocator(),
-                                               cmap="coolwarm")
+                                               cmap="jet")
             self.rightGraph.canvas.ax.yaxis.set_major_locator(ticker.MaxNLocator())
             self.rightGraph.canvas.ax.invert_yaxis()
             self.rightGraph.canvas.ax.set_xlabel("$r_{RR}$")
@@ -1205,7 +1205,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             try:
                 self.calculationFunc(self.sliderVal)
                 self.leftGraph.canvas.ax.clear()
-                self.leftGraph.canvas.ax.bar(self.edges, self.hE, width=self.BinSize)
+                self.leftGraph.canvas.ax.bar(self.edges, self.hE, width=self.BinSize, color='grey')
                 self.leftGraph.canvas.ax.set_xlabel("E")
                 self.leftGraph.canvas.ax.set_ylabel("Counts")
                 self.leftGraph.canvas.ax.set_title(self.keys[self.sliderVal])
@@ -2668,7 +2668,7 @@ class controller:
 
         except: # if its the first time run the execution
             self.mainWin = MainWindow()
-            self.mainWin.setWindowTitle('Multi-Well Window')
+            self.mainWin.setWindowTitle('pyT3EE Multi-Well Window')
             self.mainWin.switch_window.connect(self.show_single_well)
             try:
                 self.single_well_win.hide() # hide single well window if its currently open
@@ -2686,7 +2686,7 @@ class controller:
                 pass
         except: # if its the first time run the execution
             self.single_well_win = MainWindow_single_well()
-            self.single_well_win.setWindowTitle('Single-Well Window')
+            self.single_well_win.setWindowTitle('pyT3EE Single-Well Window')
             self.single_well_win.switch_window.connect(self.show_main)
             try:
                 self.mainWin.hide() # hide multi well window if its currently open
