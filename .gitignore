@@ -14,6 +14,6 @@ tasks.xml
 
 FRET_backend/numba_getBurstAll.py
 FRET_backend/GetBurstAllMultiprocessing.py
-FRET_backend/remove_test_files.py
+remove_test_files.py
 
 Zaber control software/

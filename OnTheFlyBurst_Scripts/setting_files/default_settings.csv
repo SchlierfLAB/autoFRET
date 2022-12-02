@@ -1,0 +1,2 @@
+leeFilterBox,gGGBox,gRRBox,maxInterTime,minInterTimeNoise,minTotal,grBox,r0Box,filesPerBinBox,flaCheckbox,leeFilterCheck,postAnaCheckbox,minTotalTick,thirtythirtyCheck,roiMLE_G_lower,roiMLE_G_upper,roiMLE_R_lower,roiMLE_R_upper
+4,1.0,1.0,0.15,0.15,70,20,40,20,True,True,True,True,False,12,1387,1687,1913

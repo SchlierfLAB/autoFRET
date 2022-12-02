@@ -200,6 +200,14 @@ class Ui_MainWindow(object):
         self.filesPerBinBox.setMaximumWidth(40)
         self.filesPerBinBox.setText('20')
 
+        # crate core selection
+        CoreSelectText = QLabel('Number of\ncores')
+        CoreSelectText.setFont(QFont(font_style, font_size))
+        self.CoreSelectBox = QLineEdit()
+        self.CoreSelectBox.setMaximumWidth(40)
+        self.CoreSelectBox.setText('Auto')
+
+
         self.thirtythirtyCheck = QCheckBox()
         self.thirtythirtyCheck.setLayoutDirection(QtCore.Qt.RightToLeft)
         self.thirtythirtyCheck.setText('+30/-30')
@@ -213,45 +221,43 @@ class Ui_MainWindow(object):
 
 
         # add widgets to grid
+
         grid = QGridLayout()
         grid.addWidget(max_inter_time_line, 0,0,1,2)
         grid.addWidget(self.maxInterTime, 0, 2)
 
-        grid.addWidget(min_inter_t_noise, 1,0, 1,2)
+        grid.addWidget(min_inter_t_noise, 1, 0, 1,2)
         grid.addWidget(self.minInterTimeNoise, 1, 2)
 
         grid.addWidget(self.minTotalTick, 2, 0, 1, 2)
         grid.addWidget(self.minTotal, 2, 2)
 
         # Todo: Place them relative to the QLineEdit windows
-        grid.addWidget(gr_text, 3,1)
-        grid.addWidget(r0_text, 3,2)
+        grid.addWidget(gr_text, 3, 1)
+        grid.addWidget(r0_text, 3, 2)
 
-        grid.addWidget(min_pho_text, 4,0)
+        grid.addWidget(min_pho_text, 4, 0)
         grid.addWidget(self.grBox, 4, 1)
         grid.addWidget(self.r0Box, 4, 2)
 
         grid.addWidget(self.leeFilterCheck, 5, 0)
         grid.addWidget(self.leeFilterBox, 5, 2)
 
-        # Todo: Place them relative to the QLineEdit windows
-        grid.addWidget(gGG_text, 6,1)
-        grid.addWidget(gRR_text, 6,2)
+        grid.addWidget(self.postAnaCheckbox, 6, 0)
 
-        grid.addWidget(self.flaCheckbox, 7, 0)
-        grid.addWidget(self.gGGBox, 7, 1)
-        grid.addWidget(self.gRRBox, 7, 2)
+        grid.addWidget(file_suffix_text,7,0)
+        grid.addWidget(self.fileSuffixBox, 7, 1)
 
-        grid.addWidget(self.postAnaCheckbox, 8, 0)
+        grid.addWidget(files_per_bin_text, 8,0)
+        grid.addWidget(self.filesPerBinBox, 8, 1)
 
-        grid.addWidget(file_suffix_text,9,0)
-        grid.addWidget(self.fileSuffixBox, 9, 1)
+        grid.addWidget(CoreSelectText, 9, 0)
+        grid.addWidget(self.CoreSelectBox, 9, 2)
 
-        grid.addWidget(files_per_bin_text, 10,0)
-        grid.addWidget(self.filesPerBinBox, 10, 1)
+        grid.addWidget(self.thirtythirtyCheck, 10, 0)
+        grid.addWidget(self.refreshButton, 10, 2)
 
-        grid.addWidget(self.thirtythirtyCheck, 11, 0)
-        grid.addWidget(self.refreshButton, 11, 2)
+
 
 
 

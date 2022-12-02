@@ -4,10 +4,8 @@ from FRET_backend.GetBurstAllMultiprocessing import par_burst
 
 # Basic imports
 import sys
-import os
 import numpy as np
 import pandas as pd
-import collections
 import matplotlib.pyplot as plt
 
 # PyQT imports
@@ -15,16 +13,13 @@ from PyQt5.QtWidgets import QGridLayout,  QApplication
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import *
 
-# Import eval functions
+
 from FRET_backend.read_hhd import read_hhd
 from FRET_backend.read_ht3_vect import read_ht3_raw, histc
-from FRET_backend.getBurstAll import getBurstAll
 from FRET_backend.lee_filter import leeFilter
 from FRET_backend.burst_locator import burstLoc
-
-from joblib import Parallel, delayed
-import multiprocessing
 import time
+import multiprocessing
 
 
 
@@ -570,44 +565,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         fig3.show()
 
-    def burst_fun(self, folder, ht3_locations, meanIRFG, meanIRFR):
-        checkInner = 0
-        arrData = []
-
-        # get folder dir from file dir --> Robust since if the file can be handeld the folder is also correct
-        folder_path = '/'.join(ht3_locations[folder][0].translate(str.maketrans({'/': '\\'})).split('\\')[0:-1])
-        print(folder_path)
-
-        # save empty file for usage in getBurstAll
-        dataAll = dict()
-        dataAll['photonHIST'] = np.zeros([4096,2])
-        str_path_dA = folder_path + '/allHIST.npy'
-        np.save(str_path_dA, dataAll)
-
-        dataN = dict()
-        dataN['backHIST'] = np.zeros([4096,2])
-        dataN['time'] = [0]
-        str_pathdN = folder_path + '/backHIST.npy'
-        np.save(str_pathdN, dataN)
-
-        lastBN = 0
-        File_counter = 0
-        print(f'\nWorker on folder: {folder}')
-
-        for file in ht3_locations[folder]:
-            File_counter += 1
-            print(f'Start analyzing file {File_counter} of {len(ht3_locations[folder])}\n')
-
-            file = file.translate(str.maketrans({'/': '\\'}))
-            fileName = file.split('\\')[-1]
-            folderName = '/'.join(file.split('\\')[0:-1])
-            BurstData = getBurstAll(fileName, folderName, self.suffix, lastBN, self.Brd_GGR, self.Brd_RR,self.threIT \
-                                    , self.threITN, self.minPhs, 10, self.newIRF_G, meanIRFG, self.newIRF_R, \
-                                    meanIRFR, self.Brd_GGR, self.Brd_RR, self.dtBin, self.setLeeFilter, \
-                                    self.boolFLA, self.gGG, self.gRR, self.boolTotal, self.minGR, self.minR0, \
-                                    self.boolPostA, checkInner)
-            lastBN += len(BurstData)
-
 
     def AnalyzeButtonEvent(self):
         # load current settings
@@ -625,7 +582,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         folder = QtWidgets.QFileDialog.getExistingDirectory(
             self, "Select Directory")
 
-        workers = -2 # max. num of concurrently running jobs -> -2 == All but one are used
+        workers = self.numCores # max. num of concurrently running jobs -> -2 == All but one are used
         start = time.time()
 
         # Backend loky is a robust multiprocessing backend with the disadvantage of creating a little more
@@ -635,7 +592,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         # very large file.
 
         par_burst(folder, self.suffix, self.Brd_GGR, self.Brd_RR, self.threIT, self.threITN, self.minPhs, self.IRF_G,
-                  meanIRFG, self.IRF_R, meanIRFR, self.dtBin, self.setLeeFilter, self.boolFLA, self.gRR, self.gGG,
+                  meanIRFG, self.IRF_R, meanIRFR, self.dtBin, self.setLeeFilter, self.boolFLA,
                   self.boolTotal, self.minGR, self.minR0, self.boolPostA, workers)
 
 
@@ -656,14 +613,32 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         # read Setting Values
         # get integer values of boxes
         self.setLeeFilter = int(self.leeFilterBox.text())
-        self.gGG = float(self.gGGBox.text())
-        self.gRR = float(self.gRRBox.text())
         self.threIT = float(self.maxInterTime.text())
         self.threITN = float(self.minInterTimeNoise.text())
         self.minPhs = int(self.minTotal.text())
         self.minGR = int(self.grBox.text())
         self.minR0 = int(self.r0Box.text())
         self.filesBin = int(self.filesPerBinBox.text())
+        self.numCores = self.CoreSelectBox.text()
+
+        if self.numCores == 'Auto':
+            self.numCores = -2
+        else:
+            try:
+                self.numCores = int(self.numCores)
+                if self.numCores > multiprocessing.cpu_count():
+                    self.numCores = multiprocessing.cpu_count()
+
+                elif self.numCores == 0:
+                    self.numCores = 1
+
+            except ValueError:
+                print('Give proper core number as integer')
+
+        if self.numCores > 0:
+            print(f'Run with {self.numCores} workers')
+        else:
+            print(f'Run with {multiprocessing.cpu_count() + (self.numCores+1)} workers')
 
 
         self.suffix = self.fileSuffixBox.text()
@@ -684,8 +659,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         # setting values do have to have key equivalent to the setting "box" object name
         # all the integers/floats/general values
         self.settings_dict['leeFilterBox'] = self.setLeeFilter
-        self.settings_dict['gGGBox'] = self.gGG
-        self.settings_dict['gRRBox'] = self.gRR
         self.settings_dict['maxInterTime'] = self.threIT
         self.settings_dict['minInterTimeNoise'] = self.threITN
         self.settings_dict['minTotal'] = self.minPhs
