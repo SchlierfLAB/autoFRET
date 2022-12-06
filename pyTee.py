@@ -726,7 +726,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.wellSlider.setMaximum(len(self.fileDict.keys())-1)
             self.updateAllGraph(0)
             # initiate right graph
-            self.heatmapPlot()
+            #self.heatmapPlot()
 
 
 
@@ -795,7 +795,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         Function to update right hand plot (River plot)
         """
 
-        #try:
 
         self.hE_np = np.zeros((len(self.hE), len(self.keys)))  # E-histogram values
         self.hS_np = np.zeros((len(self.hS), len(self.keys)))  # S-histogram values
@@ -804,6 +803,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.hTau2_np = np.zeros((len(self.hTau2), len(self.keys)))  # Tau(A)
         self.hrGG_np = np.zeros((len(self.hrGG), len(self.keys)))  # hrGG
         self.hrRR_np = np.zeros((len(self.hrRR), len(self.keys)))  # hrRR
+
+        contour_levels = 30
 
         for i in np.arange(len(self.keys)):
             # calc all values of all values
@@ -820,9 +821,15 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         if self.rightComboBox.currentIndex() == 0:
             self.rightGraph.canvas.ax.clear()
-            self.rightGraph.canvas.ax.contourf(self.edges, self.keys, self.hE_np.T, locator=ticker.MaxNLocator(),
-                                               cmap="jet")
-            # self.rightGraph.canvas.ax.plot([-0.1+self.BinOffset,1.1+self.BinOffset], [self.sliderVal,self.sliderVal])
+
+            '''cs = self.rightGraph.canvas.ax.contourf(self.edges, self.keys, self.hE_np.T,
+                                                    locator=ticker.MaxNLocator(), cmap="jet")'''
+            cs = self.rightGraph.canvas.ax.contourf(self.edges, self.keys, self.hE_np.T,
+                                                    levels=contour_levels, cmap="jet")
+
+
+            #self.rightGraph.canvas.ax.plot([-0.1+self.BinOffset,1.1+self.BinOffset], [self.sliderVal,self.sliderVal])
+            #self.rightGraph.canvas.ax.set_yticks()
             self.rightGraph.canvas.ax.yaxis.set_major_locator(ticker.MaxNLocator())
             self.rightGraph.canvas.ax.invert_yaxis()
             self.rightGraph.canvas.ax.set_xlabel("E")
@@ -833,7 +840,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         elif self.rightComboBox.currentIndex() == 1:
             self.rightGraph.canvas.ax.clear()
-            self.rightGraph.canvas.ax.contourf(self.edges, self.keys, self.hS_np.T, locator=ticker.MaxNLocator(),
+            self.rightGraph.canvas.ax.contourf(self.edges, self.keys, self.hS_np.T, levels=contour_levels,
                                                cmap="jet")
             # self.rightGraph.canvas.ax.plot([-0.1+self.BinOffset,1.1+self.BinOffset], [self.sliderVal,self.sliderVal])
             self.rightGraph.canvas.ax.yaxis.set_major_locator(ticker.MaxNLocator())
@@ -861,7 +868,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         elif self.rightComboBox.currentIndex() == 3:
             # Tau(D(A)) histogram
             self.rightGraph.canvas.ax.clear()
-            self.rightGraph.canvas.ax.contourf(self.edgesTau, self.keys, self.hTau_np.T, locator=ticker.MaxNLocator(),
+            self.rightGraph.canvas.ax.contourf(self.edgesTau, self.keys, self.hTau_np.T, levels=contour_levels,
                                                cmap="jet")
             self.rightGraph.canvas.ax.yaxis.set_major_locator(ticker.MaxNLocator())
             self.rightGraph.canvas.ax.invert_yaxis()
@@ -875,7 +882,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         elif self.rightComboBox.currentIndex() == 4:
             # Tau(A) histogram
             self.rightGraph.canvas.ax.clear()
-            self.rightGraph.canvas.ax.contourf(self.edgesTau, self.keys, self.hTau2_np.T, locator=ticker.MaxNLocator(),
+            self.rightGraph.canvas.ax.contourf(self.edgesTau, self.keys, self.hTau2_np.T, levels=contour_levels,
                                                cmap="jet")
             self.rightGraph.canvas.ax.yaxis.set_major_locator(ticker.MaxNLocator())
             self.rightGraph.canvas.ax.invert_yaxis()
@@ -889,7 +896,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         elif self.rightComboBox.currentIndex() == 5:
             # rGG histogram
             self.rightGraph.canvas.ax.clear()
-            self.rightGraph.canvas.ax.contourf(self.edgesrGG, self.keys, self.hrGG_np.T, locator=ticker.MaxNLocator(),
+            self.rightGraph.canvas.ax.contourf(self.edgesrGG, self.keys, self.hrGG_np.T, levels=contour_levels,
                                                cmap="jet")
             self.rightGraph.canvas.ax.yaxis.set_major_locator(ticker.MaxNLocator())
             self.rightGraph.canvas.ax.invert_yaxis()
@@ -903,7 +910,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         elif self.rightComboBox.currentIndex() == 6:
             # rRR histogram
             self.rightGraph.canvas.ax.clear()
-            self.rightGraph.canvas.ax.contourf(self.edgesrGG, self.keys, self.hrRR_np.T, locator=ticker.MaxNLocator(),
+            self.rightGraph.canvas.ax.contourf(self.edgesrGG, self.keys, self.hrRR_np.T, levels=contour_levels,
                                                cmap="jet")
             self.rightGraph.canvas.ax.yaxis.set_major_locator(ticker.MaxNLocator())
             self.rightGraph.canvas.ax.invert_yaxis()
