@@ -46,9 +46,11 @@ Now run the pyBat or pyTree file. For detailed information on the program refer 
 The performance is evaluated on a full 96 well measurement containing roughly 8GB of data.
 Systems: 
 - MacOS: MacBook pro with an M1 pro 4 core CPU and 16GB memory
-- Windows: Workstation with an Intel Xeon E3-1270 4 core CPU and 32GB memory
+- Windows: Workstation 1 with an Intel Xeon E3-1270 4 core CPU and 32GB memory
+- Windows: Workstation 2 with an Intel i7-8700k 6 core CPU and 32GB memory
 
-| Tool               | MacBook pro | Windows Workstation |
-|--------------------|----------|--------------------|
-| ParBat 7 processes | 3 Hours  | 13 Hours |
-| Single Run         | 24 Hours | ??                 |
+| Tool                | MacBook pro | Windows Workstation 1 | Windows Workstation 2 |
+|---------------------|-------------|-----------------------|-----------------------|
+| Single Run          | 24 Hours    | -                     | -                     |
+| ParBat 7 processes  | 3 Hours     | 13 Hours              | -                     |
+| ParBat 11 processes | -           | -                     | 7.3 Hours             |  

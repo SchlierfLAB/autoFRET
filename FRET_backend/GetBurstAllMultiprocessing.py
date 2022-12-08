@@ -232,7 +232,7 @@ def third_loop(roiRG, roiR0, interPhT, bLengthLong, bStartLong, Bursts, PhotonsS
 
 
 def getBurstAll(filename, pathname, suffix, lastBN, roiRG, roiR0, threIT, threIT2, minPhs, threAveT, IRF_G,
-                meanIRFG, IRF_R, meanIRFR, roiMLE_G, roiMLE_R, dtBin, setLeeFilter, boolFLA, gGG, gRR, boolTotal, minGR, minR0,
+                meanIRFG, IRF_R, meanIRFR, roiMLE_G, roiMLE_R, dtBin, setLeeFilter, boolFLA, boolTotal, minGR, minR0,
                 boolPostA, checkInner):
 
 
@@ -483,11 +483,11 @@ def getBurstAll(filename, pathname, suffix, lastBN, roiRG, roiR0, threIT, threIT
 
             hMicroGII, _ = histc(accMicroGII,edges)
             hMicroGT, _ = histc(accMicroGT, edges)
-            hMicroG = gGG * hMicroGII[:] + hMicroGT[:]
+            hMicroG = hMicroGII[:] + hMicroGT[:]
 
             hMicroRII, _ = histc(accMicroRII,edges)
             hMicroRT, _ = histc(accMicroRT, edges)
-            hMicroR = gRR * hMicroRII[:] + hMicroRT[:]
+            hMicroR = hMicroRII[:] + hMicroRT[:]
             roihMicroG = hMicroG[(roiMLE_G[0]-1):roiMLE_G[1]]
 
 
@@ -495,8 +495,8 @@ def getBurstAll(filename, pathname, suffix, lastBN, roiRG, roiR0, threIT, threIT
                                           & (accMicroGII <= roiMLE_G[1])]
             roi_accMicroGT = accMicroGT[(roiMLE_G[0] <= accMicroGT)
                                         & (accMicroGT <= roiMLE_G[1])]
-            mean_roiMicroG = np.sum(np.append(gGG * roi_accMicroGII, roi_accMicroGT)) / \
-                             (gGG*len(roi_accMicroGII) + len(roi_accMicroGT))
+            mean_roiMicroG = np.sum(np.append(roi_accMicroGII, roi_accMicroGT)) / \
+                             (len(roi_accMicroGII) + len(roi_accMicroGT))
 
 
             roihMicroR = hMicroR[roiMLE_R[0]:roiMLE_R[1]]
@@ -505,8 +505,8 @@ def getBurstAll(filename, pathname, suffix, lastBN, roiRG, roiR0, threIT, threIT
                                           & (accMicroRII <= roiMLE_R[1])]
             roi_accMicroRT = accMicroRT[(roiMLE_R[0] <= accMicroRT)
                                         & (accMicroRT <= roiMLE_R[1])]
-            mean_roiMicroR = np.sum(np.append(gRR * roi_accMicroRII, roi_accMicroRT)) / \
-                             (gRR*len(roi_accMicroRII) + len(roi_accMicroRT))
+            mean_roiMicroR = np.sum(np.append(roi_accMicroRII, roi_accMicroRT)) / \
+                             (len(roi_accMicroRII) + len(roi_accMicroRT))
 
 
             if any(roihMicroG):
@@ -574,7 +574,7 @@ def getBurstAll(filename, pathname, suffix, lastBN, roiRG, roiR0, threIT, threIT
     return []
 
 def burst_fun(folder, ht3_locations, suffix, Brd_GGR,Brd_RR, threIT,threITN, minPhs, newIRF_G, meanIRFG, \
-              newIRF_R,  meanIRFR, dtBin, setLeeFilter, boolFLA, gGG, gRR,boolTotal ,minGR ,minR0, \
+              newIRF_R,  meanIRFR, dtBin, setLeeFilter, boolFLA,boolTotal ,minGR ,minR0, \
               boolPostA):
 
     checkInner = np.array([0])
@@ -607,7 +607,7 @@ def burst_fun(folder, ht3_locations, suffix, Brd_GGR,Brd_RR, threIT,threITN, min
         BurstData = getBurstAll(fileName, folderName,suffix, lastBN, Brd_GGR,Brd_RR, threIT \
                                     ,threITN, minPhs, 10,  newIRF_G, meanIRFG, newIRF_R, \
                                     meanIRFR, Brd_GGR, Brd_RR, dtBin,setLeeFilter, \
-                                boolFLA,gGG,gRR,boolTotal,minGR,minR0, \
+                                boolFLA, boolTotal,minGR,minR0, \
                                 boolPostA, checkInner)
         lastBN += len(BurstData)
 
@@ -641,17 +641,28 @@ def get_files(folder):
 
     return ht3_locations
 
+def check_for_bdata_files(eval_folder, suffix):
+    # Function that returns True if Bdata or Pdata files are present in the analysis folder
+    # False if not
 
-def par_burst(eval_folder_path, suffix, Brd_GGR, Brd_RR, threIT, threIT2, minPhs, IRF_G, meanIRFG, IRF_R, \
-              meanIRFR, dtBin, setLeeFilter, boolFLA, gGG, gRR, boolTotal, minGR, minR0, boolPostA, \
+    for key in eval_folder.keys():
+        bdata_file = '/'.join(eval_folder[key][0].translate(str.maketrans({'/': '\\'})) \
+                              .split('\\')[0:-1]) + f'/Bdata{suffix}.bin'
+        pdata_file = '/'.join(eval_folder[key][0].translate(str.maketrans({'/': '\\'})) \
+                              .split('\\')[0:-1]) + f'/Bdata{suffix}.bin'
+
+        if os.path.isfile(bdata_file) or os.path.isfile(pdata_file):
+            return True
+
+    return False
+
+
+
+
+def par_burst(eval_folder, suffix, Brd_GGR, Brd_RR, threIT, threIT2, minPhs, IRF_G, meanIRFG, IRF_R, \
+              meanIRFR, dtBin, setLeeFilter, boolFLA, boolTotal, minGR, minR0, boolPostA, \
               threads=-2):
 
-    print('In par burst')
-
-    eval_folder = get_files(eval_folder_path)
-
-
-    print(f'Test parrallel on {threads} threads')
 
     start_multi_run = time.time()
 
@@ -659,7 +670,7 @@ def par_burst(eval_folder_path, suffix, Brd_GGR, Brd_RR, threIT, threIT2, minPhs
     Parallel(n_jobs=threads, prefer='processes')(delayed(burst_fun)(folder, eval_folder, suffix, Brd_GGR, Brd_RR, \
                                                                    threIT, threIT2, minPhs, \
                                                                    IRF_G, meanIRFG, IRF_R, meanIRFR, \
-                                                                   dtBin, setLeeFilter, boolFLA, gGG, gRR, \
+                                                                   dtBin, setLeeFilter, boolFLA, \
                                                                    boolTotal, minGR, minR0, boolPostA) \
                                                 for folder in eval_folder.keys())
 
@@ -671,11 +682,11 @@ if __name__ == '__main__':
 
 
     threIT, threIT2, minPhs, threAveT, IRF_G, meanIRFG, IRF_R, meanIRFR, dtBin, setLeeFilter, boolFLA, \
-    gGG, gRR, boolTotal, minGR, minR0, boolPostA, checkInner = get_input()
+    boolTotal, minGR, minR0, boolPostA, checkInner = get_input()
 
     threads = -3  # multiprocessing.cpu_count()  # often confused with cores
 
     par_burst(test_folder_path, 'test', np.array([12,1387]), np.array([1687,1913]), threIT[0], threIT2[0], minPhs[0], IRF_G[0], meanIRFG[0], IRF_R[0], \
-              meanIRFR[0], dtBin[0], setLeeFilter[0][0], boolFLA[0], gGG[0], gRR[0], boolTotal[0], minGR[0], minR0[0], boolPostA[0], \
+              meanIRFR[0], dtBin[0], setLeeFilter[0][0], boolFLA[0], boolTotal[0], minGR[0], minR0[0], boolPostA[0], \
               threads=-2)
 

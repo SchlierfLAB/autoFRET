@@ -7,12 +7,12 @@ from watchdog.observers import Observer
 from watchdog.events import PatternMatchingEventHandler
 import os, sys, time
 import numpy as np
-from PyQt5.QtWidgets import QApplication, QDialog
+from PyQt5.QtWidgets import QApplication
 
 from FRET_backend.read_hhd import read_hhd
 from FRET_backend.getBurstAll import getBurstAll
 from FRET_backend.read_ht3_vect import read_ht3_raw
-from Select_file_Window import File_DD_Dialog
+from OnTheFlyBurst_Scripts.Select_file_Window import File_DD_Dialog
 
 
 class OTF_Burst():
@@ -23,10 +23,6 @@ class OTF_Burst():
         self.import_settings()
         # init first file flag since some info is extracted from just first file
         self.first_file = True
-
-        # Todo: dummy vars for range that should be given by the User somehow
-        self.roiMLE_G = [12, 1387]
-        self.roiMLE_R = [1687, 1913]
 
         # start program
         self.track_ht3_folder(self.target_folder)
@@ -167,6 +163,8 @@ class OTF_Burst():
             self.minGR = int(data.grBox)
             self.minR0 = int(data.r0Box)
             self.filesBin = int(data.filesPerBinBox)
+            self.roiMLE_G = [int(data.roiMLE_G_lower), int(data.roiMLE_G_upper)]
+            self.roiMLE_R = [int(data.roiMLE_R_lower), int(data.roiMLE_R_upper)]
 
             # gives a bool for tickboxes
             self.boolFLA = data.flaCheckbox.bool()
