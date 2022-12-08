@@ -1,6 +1,6 @@
 # Import GUI
 from FRET_backend.BatUi import Ui_MainWindow
-from FRET_backend.GetBurstAllMultiprocessing import par_burst
+from FRET_backend.GetBurstAllMultiprocessing import par_burst, get_files, check_for_bdata_files
 
 # Basic imports
 import sys
@@ -20,6 +20,56 @@ from FRET_backend.lee_filter import leeFilter
 from FRET_backend.burst_locator import burstLoc
 import time
 import multiprocessing
+
+
+class ask_override_files(QDialog):
+    def __init__(self, parent=None):
+        super(ask_override_files, self).__init__(parent)
+        self.setWindowTitle('File conflict')
+        self.grid = QGridLayout()
+        self.resize(250, 250)
+        self.setLayout(self.grid)
+
+        self.decision = 'Stop'
+
+        radioButton = QRadioButton('Overwrite Files')
+        radioButton.to_do = 'Overwrite Files'
+        radioButton.toggled.connect(self.updataState)
+        self.grid.addWidget(radioButton, 0, 0)
+
+        radioButton = QRadioButton('Change Suffix')
+        radioButton.to_do = 'Change Suffix'
+        radioButton.toggled.connect(self.updataState)
+        self.grid.addWidget(radioButton, 1, 0)
+
+        # provide option to give new suffix
+        suffix_box = QLineEdit()
+        suffix_box.setPlaceholderText('NewSuffix')
+        self.grid.addWidget(suffix_box, 1, 1)
+
+        # Stop is the default state
+        radioButton = QRadioButton('Stop')
+        radioButton.to_do = 'Stop'
+        radioButton.setChecked(True)
+        self.current = 'Stop'
+        radioButton.toggled.connect(self.updataState)
+        self.grid.addWidget(radioButton, 2, 0)
+
+        # Close with selection button
+        select_button = QPushButton("OK")
+        select_button.clicked.connect(self.ClickEvent)
+        labelResult = QLabel()
+        self.grid.addWidget(select_button, 3, 0)
+
+    def updataState(self):
+        self.current = str(self.sender().to_do)
+
+    def ClickEvent(self):
+        self.decision = self.current
+
+
+
+
 
 
 
@@ -167,6 +217,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         # Set up file dialog window
         self.drag_drop_files = File_DD_Dialog()
+
+        self.duplicate_files_di = ask_override_files()
 
         #Set button connections
         self.GG_GR_Lifetime_button.clicked.connect(self.GG_GR_Slot)
@@ -582,6 +634,15 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         folder = QtWidgets.QFileDialog.getExistingDirectory(
             self, "Select Directory")
 
+        eval_folder = get_files(folder)
+        meas_file_check = check_for_bdata_files(eval_folder, self.suffix)
+
+        if meas_file_check:
+            self.duplicate_files_di.exec_()
+        else:
+            pass
+
+
         workers = self.numCores # max. num of concurrently running jobs -> -2 == All but one are used
         start = time.time()
 
@@ -591,7 +652,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         # Simpler: Leads to a situation in which all parallel processes have to wait for a single one that works on a
         # very large file.
 
-        par_burst(folder, self.suffix, self.Brd_GGR, self.Brd_RR, self.threIT, self.threITN, self.minPhs, self.IRF_G,
+        par_burst(eval_folder, self.suffix, self.Brd_GGR, self.Brd_RR, self.threIT, self.threITN, self.minPhs, self.IRF_G,
                   meanIRFG, self.IRF_R, meanIRFR, self.dtBin, self.setLeeFilter, self.boolFLA,
                   self.boolTotal, self.minGR, self.minR0, self.boolPostA, workers)
 

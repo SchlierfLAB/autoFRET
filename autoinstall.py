@@ -31,7 +31,7 @@ else:
 if system == 'Darwin':
     print(bcolors.OKBLUE + 'Start installing on Darwin (MacOS)')
     # get mac yml path
-    yml_mac_file = os.path.abspath('requirements/Mac_enviroment_Bat_T.yml')
+    yml_mac_file = os.path.abspath('requirements/Simple_env.yml')
     # test
     if not os.path.isfile(yml_mac_file):
         yml_mac_file = input('Could not grep Mac_enviroment_Bat_T.yml.\nPlease enter the '
@@ -61,7 +61,7 @@ if system == 'Darwin':
 elif system == 'Windows':
     print(bcolors.OKBLUE + 'Start installing on Windows')
     # get win yml path
-    yml_windows_file = os.path.abspath('requirements\Windows_enviroment_Bat_T.yml')
+    yml_windows_file = os.path.abspath('requirements\Simple_env.yml')
     # test
     if not os.path.isfile(yml_windows_file):
         yml_windows_file = input('Could not grep Windows_enviroment_Bat_T.yml.\nPlease enter the '

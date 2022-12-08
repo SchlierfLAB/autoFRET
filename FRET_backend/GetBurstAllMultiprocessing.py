@@ -641,17 +641,28 @@ def get_files(folder):
 
     return ht3_locations
 
+def check_for_bdata_files(eval_folder, suffix):
+    # Function that returns True if Bdata or Pdata files are present in the analysis folder
+    # False if not
 
-def par_burst(eval_folder_path, suffix, Brd_GGR, Brd_RR, threIT, threIT2, minPhs, IRF_G, meanIRFG, IRF_R, \
+    for key in eval_folder.keys():
+        bdata_file = '/'.join(eval_folder[key][0].translate(str.maketrans({'/': '\\'})) \
+                              .split('\\')[0:-1]) + f'/Bdata{suffix}.bin'
+        pdata_file = '/'.join(eval_folder[key][0].translate(str.maketrans({'/': '\\'})) \
+                              .split('\\')[0:-1]) + f'/Bdata{suffix}.bin'
+
+        if os.path.isfile(bdata_file) or os.path.isfile(pdata_file):
+            return True
+
+    return False
+
+
+
+
+def par_burst(eval_folder, suffix, Brd_GGR, Brd_RR, threIT, threIT2, minPhs, IRF_G, meanIRFG, IRF_R, \
               meanIRFR, dtBin, setLeeFilter, boolFLA, boolTotal, minGR, minR0, boolPostA, \
               threads=-2):
 
-    print('In par burst')
-
-    eval_folder = get_files(eval_folder_path)
-
-
-    print(f'Test parrallel on {threads} threads')
 
     start_multi_run = time.time()
 
