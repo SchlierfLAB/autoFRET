@@ -1,9 +1,6 @@
 import numpy as np
 import io
 
-# Todo: Check wether the output should be generated here or in getBurstAll
-#outputfile = io.open("/Users/mbpro/Desktop/Work/WHK Schlierf Group/pyFRET_ph/OutputData/"
-#                     "BData1.bin", "w+", encoding="utf-16le")
 '''isT2 = False
 version = 2
 oflcorrection = 0'''
@@ -109,11 +106,9 @@ def count_true(array):
 
 if __name__ == '__main__':
 
-    inputfile = '/Users/mbpro/Desktop/Work/WHK Schlierf Group/pyFRET_ph/Sample_Data/A08_1.ht3'
+    inputfile = '/Users/philipp/Desktop/Work/WHK Schlierf Group/smFRET_Software/speed_tests/eval_folder/A02/A02_2.ht3'
     #edges2,hGII,hGT,hRII,hRT,interPhT, numCh, midCh = read_ht3(inputfile=inputfile)
     roiRG = [100,1250]
     roiRO = [1300,2500]
-    Photons_Raw = read_ht3_raw(inputfile, False)
+    Photons_Raw = read_ht3_raw(inputfile, True)
     print(Photons_Raw)
-    Photons = Photons_Raw[(Photons_Raw[:,0] != 15) & ((Photons_Raw[:,1] >= roiRG[0]) & (Photons_Raw[:,1] <= roiRG[1]) |
-                                                      ((Photons_Raw[:,1] >= roiRO[0]) & (Photons_Raw[:,1] <= roiRO[1])))]

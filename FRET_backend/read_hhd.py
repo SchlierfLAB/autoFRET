@@ -5,7 +5,6 @@ import struct
 def read_hhd(location):
     
     inputfile = location
-    # inputfile = "/Users/bcudevs/Python Scripts/20190409_BertaIRF/IRF_L530_Reflection_Berta.hhd"    
     RHHD = []    
         
         
@@ -460,67 +459,7 @@ def read_hhd(location):
 
     return RHHD
 
-if __name__ == '__main__':
-    # debug imports
-    import scipy.io as sio
-    from read_ht3_vect import read_ht3_raw, histc
-
-    # recreate steps till get burst all
-
-    # statics
-
-    ht3file = '/Users/mbpro/Desktop/Work/WHK Schlierf Group/pyFRET_ph/Sample_Data/typical_96well_data/A11/A11_0.ht3'
-
-    Data = read_ht3_raw(ht3file)
-    RawData = Data['RawData']
-    RawInt = Data['RawInt']
-    repRate = Data['SyncRate']
-    dtBin = Data['varout4']
-    BinSize = 1
-
-    edges2 = np.arange(0,4096,1)
-    hRII=histc(RawData[np.equal(RawData[:,0], 1)][:,1],edges2)[0]
-    hRT=histc(RawData[np.equal(RawData[:,0], 3)][:,1],edges2)[0]
-
-    tt=np.arange(1,len(RawInt),1)
-    measTime=tt[-1]/1000*BinSize
-
-    numCh=(1e12/repRate/dtBin)
-    midCh=(round(numCh/2))
 
 
-    rhhd_file = '/Users/mbpro/Desktop/Work/WHK Schlierf Group/pyFRET_ph/Sample_Data/IRF_L640_ATTO655_KI.hhd'
-    RHHD_R = read_hhd(rhhd_file)
-
-    IRF_AllR = RHHD_R[0]
-    IRF_R = IRF_AllR[0] + IRF_AllR[2]
-    IRF_R = IRF_R - np.mean(IRF_R[int(midCh) - 501:int(midCh) - 100])
-
-    maxhR = np.max(np.max([hRII, hRT]))
-    normIRF_R = IRF_R / max(IRF_R) * maxhR
-
-    Brd_RR = [1240,2452]
-    newIRF_R = IRF_R[Brd_RR[0]-1:Brd_RR[1]]
-
-
-    meanIRFR = (np.sum(np.arange(1,len(newIRF_R)+1,1) * newIRF_R) / np.sum(newIRF_R) +
-                Brd_RR[0]) * dtBin/1000
-
-    # get matlab stuff for comparison
-
-    # get function inputs from matlab file
-    inputs_path = '/Users/mbpro/Desktop/Work/WHK Schlierf Group/pyFRET_ph/Sample_Data/Bat_Test/matlab_ws_latest.mat'
-    inputs = sio.loadmat(inputs_path)
-    inputs.pop('__header__')
-    inputs.pop('__version__')
-    inputs.pop('__globals__')
-
-    # dont want to assign to workspace
-    # inputs is a dict and i can use var names as inputs (lol) for it
-    '''for key, val in inputs.items():
-        if len(inputs[key]) == 1:
-            exec(key + '=val[0]')
-        else:
-            exec(key + '=val')'''
 
 

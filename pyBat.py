@@ -1,156 +1,33 @@
 # Import GUI
+import os
+
 from FRET_backend.BatUi import Ui_MainWindow
+from FRET_backend.GetBurstAllMultiprocessing import par_burst, get_files, check_for_bdata_files
+from FRET_backend.BatFileDIalog import File_DD_Dialog
+from FRET_backend.BatOverriteFilesDialog import ask_override_files
 
 # Basic imports
 import sys
-import os
 import numpy as np
 import pandas as pd
-import collections
 import matplotlib.pyplot as plt
+from pathlib import Path
 
 # PyQT imports
 from PyQt5.QtWidgets import QGridLayout,  QApplication
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import *
 
-# Import eval functions
+
 from FRET_backend.read_hhd import read_hhd
 from FRET_backend.read_ht3_vect import read_ht3_raw, histc
-from FRET_backend.getBurstAll import getBurstAll
 from FRET_backend.lee_filter import leeFilter
 from FRET_backend.burst_locator import burstLoc
-
 import time
-
-class File_DD_Dialog(QDialog):
-
-    def __init__(self, parent=None):
-        super(File_DD_Dialog, self).__init__(parent)
-        self.setWindowTitle("Drag and Drop")
-        self.setAcceptDrops(True)
-        self.grid = QGridLayout()
-        self.resize(250,200)
-
-
-        # total 4 elements for 200 pixels -> boxes y coords -> 1. 1-50, 2. 51-101, 3. 102-152
-
-        # build fields
-        self.file1Widget = QLineEdit(self)
-        self.file1Widget.setPlaceholderText('Drag ht3 File')
-        self.grid.addWidget(self.file1Widget,0,0)
-
-        # build fields
-        self.file2Widget = QLineEdit(self)
-        self.file2Widget.setPlaceholderText('Drag first hhd File')
-        self.grid.addWidget(self.file2Widget,1,0)
-
-        # build fields
-        self.file3Widget = QLineEdit(self)
-        self.file3Widget.setPlaceholderText('Drag second hhd File')
-        self.grid.addWidget(self.file3Widget,2,0)
-
-        # Close with selection button
-        self.select_button = QPushButton("OK")
-        self.select_button.clicked.connect(self.ok_button_pressed)
-        self.labelResult = QLabel()
-        self.grid.addWidget(self.select_button, 10, 0, 1,2)
-
-        # Buttons for file dialogs
-
-        # First define a Folder Icon
-        pixmapi = getattr(QStyle, 'SP_DirOpenIcon')
-        icon = self.style().standardIcon(pixmapi)
-
-        # File 1 Button
-        self.file1Button = QPushButton('')
-        self.file1Button.setIcon(icon)
-        self.file1Button.clicked.connect(self.folder_button1_select)
-        self.grid.addWidget(self.file1Button, 0,1)
-
-        # File 2 Button
-        self.file2Button = QPushButton('')
-        self.file2Button.setIcon(icon)
-        self.file2Button.clicked.connect(self.folder_button2_select)
-        self.grid.addWidget(self.file2Button, 1,1)
-
-        # File 3 Button
-        self.file3Button = QPushButton('')
-        self.file3Button.setIcon(icon)
-        self.file3Button.clicked.connect(self.folder_button3_select)
-        self.grid.addWidget(self.file3Button, 2,1)
-
-        self.setLayout(self.grid)
-
-    def folder_button1_select(self):
-        self.first_file = QtWidgets.QFileDialog.getOpenFileNames(
-            self, "Select File", "", "*.ht3")
-        try: # if nothing selected the empty var wont have an index and the program will return (same below)
-            self.file1Widget.setText(self.first_file[0][0])
-        except IndexError:
-            return
-
-    def folder_button2_select(self):
-        self.first_file = QtWidgets.QFileDialog.getOpenFileNames(
-            self, "Select File", "", "*.hhd")
-        try:
-            self.file2Widget.setText(self.first_file[0][0])
-        except IndexError:
-            return
-
-    def folder_button3_select(self):
-        self.first_file = QtWidgets.QFileDialog.getOpenFileNames(
-            self, "Select File", "", "*.hhd")
-        try:
-            self.file3Widget.setText(self.first_file[0][0])
-        except IndexError:
-            return
+import multiprocessing
 
 
 
-    def dragEnterEvent(self, event):
-        if event.mimeData().hasUrls():
-            event.accept()
-        else:
-            event.ignore()
-
-    def dropEvent(self, event):
-
-        # Define vertical coordinates for accepted boxes in a given file widget position
-        # it does scale with the window size therefore coordinates as ranges are defined
-
-        self.ycoord_range_pos1 = \
-            [self.file1Widget.pos().y()+self.file1Widget.size().height()+10,
-             self.file1Widget.pos().y()-self.file1Widget.size().height()-10]
-        self.ycoord_range_pos2 = \
-            [self.file2Widget.pos().y()+self.file2Widget.size().height()+10,
-             self.file2Widget.pos().y()-self.file2Widget.size().height()-10]
-        self.ycoord_range_pos3 = \
-            [self.file3Widget.pos().y()+self.file3Widget.size().height()+10,
-             self.file3Widget.pos().y()-self.file3Widget.size().height()-10]
-
-        files = [u.toLocalFile() for u in event.mimeData().urls()]
-
-        if event.pos().y() <= self.ycoord_range_pos1[0] and event.pos().y() > self.ycoord_range_pos1[1]:
-            if files[0].endswith('.ht3'): # only if correct ht3 file type
-                self.file1Widget.setText(files[0])
-        elif event.pos().y() <= self.ycoord_range_pos2[0] and event.pos().y() >=  self.ycoord_range_pos2[1]:
-            if files[0].endswith('.hhd'): # only if correct hhd file type
-                self.file2Widget.setText(files[0])
-        elif event.pos().y() <= self.ycoord_range_pos3[0] and event.pos().y() >= self.ycoord_range_pos3[1]:
-            if files[0].endswith('.hhd'): # only if correct hhd file type
-                self.file3Widget.setText(files[0])
-
-
-
-
-    def ok_button_pressed(self):
-        # Store the selected file path's in a dictionary
-        self.file_dir_dict = dict()
-        self.file_dir_dict['HT3'] = self.file1Widget.text()
-        self.file_dir_dict['HHD1'] = self.file2Widget.text()
-        self.file_dir_dict['HHD2'] = self.file3Widget.text()
-        self.close()
 
 class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def __init__(self, *args, **kwargs):
@@ -165,43 +42,73 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.actionExprotSettings.triggered.connect(self.export_settings)
         self.actionImportSettings.triggered.connect(self.import_settings)
 
-        self.minTotalTick.clicked.connect(self.minTot_Phot_controller)
-        self.grBox.setDisabled(True)
-        self.r0Box.setDisabled(True)
-
         # Set up file dialog window
         self.drag_drop_files = File_DD_Dialog()
 
+        self.duplicate_files_di = ask_override_files()
+
         #Set button connections
-        self.GG_GR_Lifetime_button.clicked.connect(self.GG_GR_Slot)
+        self.DD_DA_Button.clicked.connect(self.GG_GR_Slot)
         # will be enabled when data is loaded
-        self.GG_GR_Lifetime_button.setDisabled(True)
-        self.GR_Lifetime_button.clicked.connect(self.RR_Slot)
+        self.DD_DA_Button.setDisabled(True)
+        self.AA_Button.clicked.connect(self.RR_Slot)
+        self.NormButton.setDisabled(True)
+        self.NormButton.clicked.connect(self.NormButtonEvent)
+
         # will be enabled when GG_GR is set
-        self.GR_Lifetime_button.setDisabled(True)
-        self.BurstButton.clicked.connect(self.BurstButtonEvent)
+        self.AA_Button.setDisabled(True)
+        self.RawDataButton.clicked.connect(self.BurstButtonEvent)
         # will be enabled when the GG_GR and RR are set
-        self.BurstButton.setDisabled(True)
+        self.RawDataButton.setDisabled(True)
         self.AnalyzeButton.clicked.connect(self.AnalyzeButtonEvent)
         self.AnalyzeButton.setDisabled(True)
 
-        self.IPTButton.clicked.connect(self.IPTButtonEvent)
-        self.IPTButton.hide()
+        # IRF shift buttons
+        self.PlusIRFButton_Top.setDisabled(True)
+        self.PlusIRFButton_Top.clicked.connect(self.irf_shifts)
+        self.MinusIRFButton_Top.setDisabled(True)
+        self.MinusIRFButton_Top.clicked.connect(self.irf_shifts)
+        self.PlusIRFButton_Mid.setDisabled(True)
+        self.PlusIRFButton_Mid.clicked.connect(self.irf_shifts)
+        self.MinusIRFButton_Mid.setDisabled(True)
+        self.MinusIRFButton_Mid.clicked.connect(self.irf_shifts)
 
         self.refreshButton.clicked.connect(self.init_execute)
 
+        # Toggle behaviour of min Pht vs min total
+        self.minTotalTick.clicked.connect(self.tick_switch)
+        self.grBox.setDisabled(True)
+        self.r0Box.setDisabled(True)
+
+        self.data_in = False
 
         # well thats defined for some reason :D
         self.BinSize = 1
 
-    def minTot_Phot_controller(self):
+    def irf_shifts(self):
+        sender = self.sender()
+        if sender == self.PlusIRFButton_Top:
+            self.normIRF_G_plot = np.roll(self.normIRF_G_plot, 1)
+            self.plot_lifetime1()
+        elif sender == self.MinusIRFButton_Top:
+            self.normIRF_G_plot = np.roll(self.normIRF_G_plot, -1)
+            self.plot_lifetime1()
+        elif sender == self.PlusIRFButton_Mid:
+            self.normIRF_R_plot = np.roll(self.normIRF_R_plot, 1)
+            self.plot_lifetime2()
+        elif sender == self.MinusIRFButton_Mid:
+            self.normIRF_R_plot = np.roll(self.normIRF_R_plot, -1)
+            self.plot_lifetime2()
+
+
+
+    def tick_switch(self):
         if self.minTotalTick.isChecked():
             self.grBox.setDisabled(True)
             self.r0Box.setDisabled(True)
-        else:
+        elif not self.minTotalTick.isChecked():
             self.grBox.setDisabled(False)
             self.r0Box.setDisabled(False)
-
 
     def openFileSlot(self):
 
@@ -258,11 +165,17 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         self.edges2 = np.arange(0,4096,1)
 
-
         self.hGII=histc(self.RawData[np.equal(self.RawData[:,0], 2)][:,1],self.edges2)[0]
         self.hGT=histc(self.RawData[np.equal(self.RawData[:,0], 4)][:,1],self.edges2)[0]
         self.hRII=histc(self.RawData[np.equal(self.RawData[:,0], 1)][:,1],self.edges2)[0]
         self.hRT=histc(self.RawData[np.equal(self.RawData[:,0], 3)][:,1],self.edges2)[0]
+
+        # get non neg. len for plotting axis
+        #top plot
+        self.Det2_4_Xaxis = np.max([len(self.hGII[self.hGII > 0]), len(self.hGT[self.hGT > 0])])
+        #middle plot
+        self.Det1_2_Xaxis = np.max([len(self.hRII[self.hRII > 0]), len(self.hRT[self.hRT > 0])])
+
 
         self.numCh=(1e12/self.repRate/self.dtBin)
         self.midCh=(round(self.numCh/2))
@@ -283,7 +196,15 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         # Enable GG_GR button when data is there
         if self.RHHD_G and self.RHHD_R:
-            self.GG_GR_Lifetime_button.setDisabled(False)
+            self.DD_DA_Button.setDisabled(False)
+            self.NormButton.setDisabled(False)
+            self.lower_Norm.setDisabled(False)
+            self.upper_Norm.setDisabled(False)
+            self.PlusIRFButton_Top.setDisabled(False)
+            self.MinusIRFButton_Top.setDisabled(False)
+            self.PlusIRFButton_Mid.setDisabled(False)
+            self.MinusIRFButton_Mid.setDisabled(False)
+            self.data_in = True
 
         # execute with new data calculations and plotting part
         self.init_execute()
@@ -295,67 +216,102 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         ## Mathemagic ##
         IRF_AllG = self.RHHD_G[0]
         self.IRF_G = IRF_AllG[1] + IRF_AllG[3]
+
         self.IRF_G = self.IRF_G - np.mean(self.IRF_G[int(self.numCh) - 601:int(self.numCh) - 100])
-        origIRF_G = self.IRF_G
-        corrIRF_G = 0
+        #origIRF_G = self.IRF_G
+        #corrIRF_G = 0
 
         IRF_AllR = self.RHHD_R[0]
         self.IRF_R = IRF_AllR[0] + IRF_AllR[2]
+
         self.IRF_R = self.IRF_R - np.mean(self.IRF_R[int(self.midCh) - 501:int(self.midCh) - 100])
-        origIRF_R = self.IRF_R
-        corrIRF_R = 0
+        #origIRF_R = self.IRF_R
+        #corrIRF_R = 0
 
         self.maxhG = np.max(np.max([self.hGII, self.hGT]))
         self.normIRF_G = self.IRF_G / max(self.IRF_G) * self.maxhG
-
+        self.normIRF_G_plot = self.normIRF_G[self.normIRF_G > 0]
 
         self.maxhR = np.max(np.max([self.hRII, self.hRT]))
         self.normIRF_R = self.IRF_R / max(self.IRF_R) * self.maxhR
+        self.normIRF_R_plot = self.normIRF_R[self.normIRF_R > 0]
+
+        # split PARALLEL (II) and PERPENDICULAR (T)
+
+
+        # GREEN (G) part
+        self.IRF_G_II = IRF_AllG[1]
+        self.IRF_G_T = IRF_AllG[3]
+
+        self.IRF_G_II = self.IRF_G_II - np.mean(self.IRF_G_II[int(self.numCh) - 601:int(self.numCh) - 100])
+        self.IRF_G_T = self.IRF_G_T - np.mean(self.IRF_G_T[int(self.numCh) - 601:int(self.numCh) - 100])
+
+        self.maxhG_II = np.max(self.hGII)
+        self.maxhG_T = np.max(self.hGT)
+
+        self.normIRF_G_II = self.IRF_G_II / max(self.IRF_G_II) * self.maxhG_II
+        self.normIRF_G_T = self.IRF_G_T / max(self.IRF_G_T) * self.maxhG_T
+
+        # RED (R) part
+        self.IRF_R_II = IRF_AllR[0]
+        self.IRF_R_T = IRF_AllR[2]
+
+        self.IRF_R_II = self.IRF_R_II - np.mean(self.IRF_R_II[int(self.midCh) - 501:int(self.midCh) - 100])
+        self.IRF_R_T = self.IRF_R_T - np.mean(self.IRF_R_T[int(self.midCh) - 501:int(self.midCh) - 100])
+
+        self.maxhR_II = np.max(self.hRII)
+        self.maxhR_T = np.max(self.hRT)
+
+        self.normIRF_R_II = self.IRF_R_II / max(self.IRF_R_II) * self.maxhR_II
+        self.normIRF_R_T = self.IRF_R_T / max(self.IRF_R_T) * self.maxhR_T
 
 
     def plot_lifetime1(self):
 
         self.lifetime1_plot.canvas.ax.clear()
-        self.lifetime1_plot.canvas.ax.semilogy(self.edges2[self.hGII > 0], self.hGII[self.hGII > 0], color='green',
-                                               linewidth=0.5)
-        self.lifetime1_plot.canvas.ax.semilogy(self.edges2[self.hGT > 0], self.hGT[self.hGT > 0], color='green',
-                                               alpha=0.5, linewidth=0.5)
-        self.lifetime1_plot.canvas.ax.semilogy(self.edges2[np.where(self.normIRF_G > 0)],
-                                               self.normIRF_G[self.normIRF_G > 0], color='grey', linewidth=0.5)
+        self.lifetime1_plot.canvas.ax.semilogy(self.edges2, self.hGII, color='green',
+                                               linewidth=0.5, nonpositive='clip')
+
+        self.lifetime1_plot.canvas.ax.semilogy(self.edges2, self.hGT, color='green',
+                                               alpha=0.5, linewidth=0.5, nonpositive='clip')
+
+
+        self.lifetime1_plot.canvas.ax.semilogy(np.where(self.normIRF_G > 0)[0],
+                                               self.normIRF_G_plot, color='grey', linewidth=0.5)
         self.lifetime1_plot.canvas.ax.set_xlabel("Channels")
-        self.lifetime1_plot.canvas.ax.set_ylabel("GG")
-        # self.lifetime_plot.canvas.ax.set_title(self.keys[self.sliderVal])
-        # self.lifetime_plot.canvas.ax.set_xlim((-0.1, 1.1))
-        # self.lifetime_plot.canvas.ax.tick_params(direction='in', top=True, right=True)
+        self.lifetime1_plot.canvas.ax.set_ylabel("Detector 2 & 4")
+
+        # x axis lims
+        self.lifetime1_plot.canvas.ax.set_xlim((0, self.Det2_4_Xaxis))
+
         self.lifetime1_plot.canvas.fig.tight_layout()
         self.lifetime1_plot.canvas.draw()
 
     def plot_lifetime2(self):
 
         self.lifetime2_plot.canvas.ax.clear()
-        self.lifetime2_plot.canvas.ax.semilogy(self.edges2[self.hRII > 0], self.hRII[self.hRII > 0], color='red',
-                                               linewidth=0.5)
-        self.lifetime2_plot.canvas.ax.semilogy(self.edges2[self.hRT > 0], self.hRT[self.hRT > 0], color='red',
-                                               alpha=0.5, linewidth=0.5)
+        self.lifetime2_plot.canvas.ax.semilogy(self.edges2, self.hRII, color='red',
+                                               linewidth=0.5, nonpositive='clip')
+        self.lifetime2_plot.canvas.ax.semilogy(self.edges2, self.hRT, color='red',
+                                               alpha=0.5, linewidth=0.5, nonpositive='clip')
+
         self.lifetime2_plot.canvas.ax.semilogy(self.edges2[np.where(self.normIRF_R > 0)],
-                                               self.normIRF_R[self.normIRF_R > 0], color='grey', linewidth=0.5)
+                                               self.normIRF_R_plot, color='grey', linewidth=0.5)
         self.lifetime2_plot.canvas.ax.set_xlabel("Channels")
-        self.lifetime2_plot.canvas.ax.set_ylabel("GR, RR")
-        # self.lifetime_plot.canvas.ax.set_title(self.keys[self.sliderVal])
-        # self.lifetime_plot.canvas.ax.set_xlim((-0.1, 1.1))
-        # self.lifetime_plot.canvas.ax.tick_params(direction='in', top=True, right=True)
+        self.lifetime2_plot.canvas.ax.set_ylabel("Detector 1 & 2")
+
+        # def x axis lim
+        self.lifetime2_plot.canvas.ax.set_xlim((0, self.Det1_2_Xaxis))
+
         self.lifetime2_plot.canvas.fig.tight_layout()
         self.lifetime2_plot.canvas.draw()
 
     def plot_interPht(self):
 
         self.interPht_plot.canvas.ax.clear()
-        self.interPht_plot.canvas.ax.plot(self.interPhT[0:7500], linewidth=0.5)
+        self.interPht_plot.canvas.ax.plot(self.interPhT, linewidth=0.5)
         self.interPht_plot.canvas.ax.set_xlabel("$Photon_{i+1 -> i}$")
         self.interPht_plot.canvas.ax.set_ylabel("Interphoton time (ms)")
-        # self.lifetime_plot.canvas.ax.set_title(self.keys[self.sliderVal])
-        # self.lifetime_plot.canvas.ax.set_xlim((-0.1, 1.1))
-        # self.lifetime_plot.canvas.ax.tick_params(direction='in', top=True, right=True)
         self.interPht_plot.canvas.fig.tight_layout()
         self.interPht_plot.canvas.draw()
 
@@ -376,7 +332,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def GG_GR_Slot(self):
 
         # change cursor style
-        QApplication.setOverrideCursor(QtGui.QCursor(QtCore.Qt.CrossCursor))
+        self.lifetime1_plot.setCursor(QtCore.Qt.CrossCursor)
+
         self.Brd_GGR = []
         self.cid = self.lifetime1_plot.canvas.mpl_connect("button_press_event", self.get_Brd_GGR)
 
@@ -384,7 +341,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def get_Brd_GGR(self, event):
 
         self.Brd_GGR.append(round(event.xdata))
-        self.Brd_GGR = [int(x) for x in self.Brd_GGR]
 
         # Brd_GGR are the selected x coordinates of the top plot
         if len(self.Brd_GGR) == 2:
@@ -396,12 +352,17 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
             self.newIRF_G = self.IRF_G[self.Brd_GGR[0]-1:self.Brd_GGR[1]]
 
+            self.newIRF_G_II = self.IRF_G_II[self.Brd_GGR[0] - 1:self.Brd_GGR[1]]
+            self.newIRF_G_T = self.IRF_G_T[self.Brd_GGR[0] - 1:self.Brd_GGR[1]]
 
-            self.GR_Lifetime_button.setDisabled(False)
+            self.AA_Button.setDisabled(False)
 
             # if two selected reset cursor style
-            QApplication.restoreOverrideCursor()
+            self.lifetime1_plot.setCursor(QtCore.Qt.ArrowCursor)
 
+
+        elif len(self.Brd_GGR) == 1:
+            pass
 
         else:
             print('Condition in GG + GR not fullfilled:\nlen(self.Brd_GGR) != 2')
@@ -409,7 +370,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def RR_Slot(self):
         # change cursor style
-        QApplication.setOverrideCursor(QtGui.QCursor(QtCore.Qt.CrossCursor))
+        self.lifetime2_plot.setCursor(QtCore.Qt.CrossCursor)
         self.Brd_RR = []
         # self.yG = []
         self.cid = self.lifetime2_plot.canvas.mpl_connect("button_press_event", self.get_Brd_RR)
@@ -417,7 +378,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def get_Brd_RR(self, event):
 
         self.Brd_RR.append(round(event.xdata))
-        self.Brd_RR = [int(x) for x in self.Brd_RR]
 
         if len(self.Brd_RR) == 2:
 
@@ -429,28 +389,49 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
             self.newIRF_R = self.IRF_R[self.Brd_RR[0]-1:self.Brd_RR[1]]
 
+            self.newIRF_R_II = self.IRF_R_II[self.Brd_RR[0]-1:self.Brd_RR[1]]
+            self.newIRF_R_T = self.IRF_R_T[self.Brd_RR[0]-1:self.Brd_RR[1]]
+
             # enable burst (and in future analyze)
-            self.BurstButton.setDisabled(False)
+            self.RawDataButton.setDisabled(False)
             self.AnalyzeButton.setDisabled(False)
 
             # if two selected reset cursor style
-            QApplication.restoreOverrideCursor()
-
-
+            self.lifetime2_plot.setCursor(QtCore.Qt.ArrowCursor)
 
             # apply filter with user inputted Brd_GGR and Brd_RR
             self.Filter()
             self.Show_Bursts()
 
+        elif len(self.Brd_RR) == 1:
+            pass
         else:
             print('Condition in GR not fullfilled:\nlen(self.Brd_RR) != 2')
+
+    def NormButtonEvent(self):
+
+        # get current channel settings
+        channels = [int(self.lower_Norm.text()), int(self.upper_Norm.text())]
+
+        # subtract channel selection from total
+        self.hGII = self.hGII - np.mean(self.hGII[channels[0]-1:channels[1]])
+        self.hGT = self.hGT - np.mean(self.hGT[channels[0]-1:channels[1]])
+
+        self.hRII = self.hRII - np.mean(self.hRII[channels[0]-1:channels[1]])
+        self.hRT = self.hRT - np.mean(self.hRT[channels[0]-1:channels[1]])
+
+        #
+        # update lifetime plots
+        self.plot_lifetime1()
+        self.plot_lifetime2()
+
+
 
     def Filter(self):
 
         ind = ((self.Brd_GGR[0] <= self.RawData[:, 1]) & (self.RawData[:, 1] <= self.Brd_GGR[1])) | \
               (((self.RawData[:, 0] == 1) | (self.RawData[:, 0] == 3)) & (self.Brd_RR[0] <= self.RawData[:, 1]) \
                & (self.RawData[:, 1] <= self.Brd_RR[1]))
-
 
 
         # Todo: Figure out if those values should be precalculated at different position
@@ -465,12 +446,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.reduG = np.zeros(int(numArr))
         self.reduRR = np.zeros(int(numArr))
 
-        timeWindow = timeWindow = np.array([0, 999999*self.BinSize] ,dtype=np.uint64)
+        timeWindow = np.array([0, 999999*self.BinSize] ,dtype=np.uint64)
 
         iterInt = 0
-
         for i in range(len(self.reduData)):
-            print(timeWindow)
             if ((self.reduData[i,2] >= timeWindow[0]) & (self.reduData[i,2] <= timeWindow[1])):
 
                 reduInt[iterInt] = reduInt[iterInt]+1
@@ -506,7 +485,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                     self.reduR[iterInt] = self.reduR[iterInt] + 1
 
                 timeWindow = timeWindow + 1000000 * self.BinSize
-
 
 
     def BurstButtonEvent(self):
@@ -581,225 +559,145 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         fig3.show()
 
-    def AnalyzeButtonEvent(self):
+    def handle_duplicated_files(self):
+        # Trigger dialog on how to handle file conflicts
+
+        self.duplicate_files_di.exec_()
+        self.HowToTreatFiles = self.duplicate_files_di.decision
+
+        if self.HowToTreatFiles == 'Stop':
+            return
+
+        # If user wants to overwrite
+        elif self.HowToTreatFiles == 'Overwrite Files':
+            for sub in os.listdir(self.folder):
+                if not sub.startswith('.'):
+                    override_fp_Bdata = self.folder + '/' + sub + '/' + 'BData' + str(self.suffix)+'.bin'
+                    Path(override_fp_Bdata).open('w')
+                    override_fp_Pdata = self.folder + '/' + sub + '/' + 'PData' + str(self.suffix)+'.bin'
+                    Path(override_fp_Pdata).open('w')
+
+            # restart Analyze button without checking files again since they are there but empty and ready to take
+            # new data
+            self.AnalyzeButtonEvent(IRF_calcs=True, Check_Files=False)
+
+        # If user wants to change the suffix
+        elif self.HowToTreatFiles == 'Change Suffix':
+
+            self.NewSuffix = self.duplicate_files_di.suffix_box.text()
+
+            if self.NewSuffix == self.suffix:
+                self.handle_duplicated_files()
+            else:
+                self.suffix = self.NewSuffix
+                self.fileSuffixBox.setText(self.suffix)
+                self.AnalyzeButtonEvent(IRF_calcs=True, Check_Files=False)
+
+        # fallback --> Do nothing
+        else:
+            return
+
+    # Todo: Figure out why dummy is required
+    # Problem is that the first input will turn False no matter what. The rest can be used as usual
+    # Could also be solved by global variables..
+    def AnalyzeButtonEvent(self, dummy=True, IRF_calcs=True, Check_Files=True):
 
         # load current settings
         self.get_current_settings()
 
-        # obtain average IRF shift
-        meanIRFG = (np.sum(np.arange(1,len(self.newIRF_G)+1,1) * self.newIRF_G) / np.sum(self.newIRF_G) +
-                    self.Brd_GGR[0]) * self.dtBin/1000
+        if IRF_calcs:
+            # obtain average IRF shift
+            meanIRFG = (np.sum(np.arange(1, len(self.newIRF_G) + 1, 1) * self.newIRF_G) / np.sum(self.newIRF_G) +
+                        self.Brd_GGR[0]) * self.dtBin / 1000
+
+            meanIRFG_II = (np.sum(np.arange(1, len(self.newIRF_G_II) + 1, 1) * self.newIRF_G_II) / np.sum(self.newIRF_G_II) +
+                        self.Brd_GGR[0]) * self.dtBin / 1000
+            meanIRFG_T = (np.sum(np.arange(1, len(self.newIRF_G_T) + 1, 1) * self.newIRF_G_T) / np.sum(self.newIRF_G_T) +
+                        self.Brd_GGR[0]) * self.dtBin / 1000
+
+            meanIRFR = (np.sum(np.arange(1, len(self.newIRF_R) + 1, 1) * self.newIRF_R) / np.sum(self.newIRF_R) +
+                        self.Brd_RR[0]) * self.dtBin / 1000
+
+            meanIRFR_II = (np.sum(np.arange(1, len(self.newIRF_R_II) + 1, 1) * self.newIRF_R_II) / np.sum(self.newIRF_R_II) +
+                        self.Brd_RR[0]) * self.dtBin / 1000
+            meanIRFR_T = (np.sum(np.arange(1, len(self.newIRF_R_T) + 1, 1) * self.newIRF_R_T) / np.sum(self.newIRF_R_T) +
+                        self.Brd_RR[0]) * self.dtBin / 1000
+
+        if Check_Files:
+            # open a full 96 well folder
+            # Open folder directory dialog to select the folder
+            self.folder = QtWidgets.QFileDialog.getExistingDirectory(
+                self, "Select Directory")
+
+            eval_folder = get_files(self.folder)
+            meas_file_check = check_for_bdata_files(eval_folder, self.suffix)
+
+            if meas_file_check:
+                self.handle_duplicated_files()
+                return
+
+        eval_folder = get_files(self.folder)
+
+        workers = self.numCores # max. num of concurrently running jobs -> -2 == All but one are used
+
+        if self.numCores > 0:
+            print(f'Run with {self.numCores} workers')
+        else:
+            print(f'Run with {multiprocessing.cpu_count() + (self.numCores+1)} workers')
+
+        start = time.time()
+
+        # Backend loky is a robust multiprocessing backend with the disadvantage of creating a little more
+        # overhead and communication required than "pure" multiprocessing. Still works very good.
+        # multi threading does not work out due to global interpreter locks introduced by heavy object usage.
+        # Simpler: Leads to a situation in which all parallel processes have to wait for a single one that works on a
+        # very large file.
+
+        par_burst(eval_folder, self.suffix, self.Brd_GGR, self.Brd_RR, self.threIT, self.threITN, self.minPhs, self.newIRF_G_II, self.newIRF_G_T,
+                  meanIRFG_II, meanIRFG_T, self.newIRF_R_II, self.newIRF_R_T, meanIRFR_II, meanIRFR_T, self.dtBin, self.setLeeFilter, self.boolFLA,
+                  self.boolTotal, self.minGR, self.minR0, self.boolPostA, self.tauFRET, self.tauALEX, workers)
 
 
-        meanIRFR = (np.sum(np.arange(1,len(self.newIRF_R)+1,1) * self.newIRF_R) / np.sum(self.newIRF_R) +
-                    self.Brd_RR[0]) * self.dtBin/1000
-
-        # open a full 96 well folder
-        #Open folder directory dialog to select the folder
-        folder = QtWidgets.QFileDialog.getExistingDirectory(
-            self, "Select Directory")
-
-
-        # get subfolder and file locations
-
-        ht3_locations = dict()
+        print(f'Took {time.time()-start} seconds for analyzing the Files')
         try:
-            for path, subdirs, files in os.walk(folder):
-                for name in files:
-                    if name.endswith('.ht3'):
-                        try:
-                            ht3_locations[name[0:3]] = ht3_locations[name[0:3]] + [os.path.join(path,name)]
-                        except KeyError:
-                            ht3_locations[name[0:3]] = [os.path.join(path,name)]
-
-        except FileNotFoundError:
-            return
-
-        def sort_fun_key(string):
-            string = string.split('/')[-1]
-            if len(string) == 10:
-                return string[0:6]
-            else:
-                return string[0:4] + '0' + string[4]
-
-        # sort the folders
-        for keys in ht3_locations.keys():
-            ht3_locations[keys] = sorted(ht3_locations[keys], key=sort_fun_key)
-
-        ht3_locations = collections.OrderedDict(sorted(ht3_locations.items()))
-
-        # Todo: Should check inner be user given or just turned off for later version?
-        existCB = 0
-        checkInner = 0
-        folder_counter = 0
-
-
-        for folder in ht3_locations.keys():
-            folder_counter += 1
-            print(f'\nStart analyzing measurement folder {folder_counter} of {len(ht3_locations.keys())}\n')
-
-            arrData = []
-
-            # get folder dir from file dir --> Robust since if the file can be handeld the folder is also correct
-            folder_path = '/'.join(ht3_locations[folder][0].translate(str.maketrans({'/': '\\'})).split('\\')[0:-1])
-            print(folder_path)
-
-            # save empty file for usage in getBurstAll
-            dataAll = dict()
-            dataAll['photonHIST'] = np.zeros([4096,2])
-            str_path_dA = folder_path + '/allHIST.npy'
-            np.save(str_path_dA, dataAll)
-
-            dataN = dict()
-            dataN['backHIST'] = np.zeros([4096,2])
-            dataN['time'] = [0]
-            str_pathdN = folder_path + '/backHIST.npy'
-            np.save(str_pathdN, dataN)
-
-            # define six subplots per folder to be shown to the user --> row major for accessing the subplots
-            # figure set to be in HD (1920x1080)
-            fig, ((ax1,ax2,ax3), (ax4,ax5,ax6)) = plt.subplots(nrows=2, ncols=3, figsize=(19.2, 10.8))
-
-            plt.ion()
-            lastBN = 0
-            File_counter = 0
-
-            start = time.time()
-            print('Start the whole GetBurstAll process')
-
-            for file in ht3_locations[folder]:
-                File_counter += 1
-                print(f'Start analyzing file {File_counter} of {len(ht3_locations[folder])}\n')
-
-                file = file.translate(str.maketrans({'/': '\\'}))
-                fileName = file.split('\\')[-1]
-                folderName = '/'.join(file.split('\\')[0:-1])
-
-                BurstData = getBurstAll(fileName, folderName, self.suffix, lastBN, self.Brd_GGR, self.Brd_RR,self.threIT \
-                                        , self.threITN, self.minPhs, 10, self.newIRF_G, meanIRFG, self.newIRF_R, \
-                                        meanIRFR, self.Brd_GGR, self.Brd_RR, self.dtBin, self.setLeeFilter, \
-                                        self.boolFLA, self.gGG, self.gRR, self.boolTotal, self.minGR, self.minR0, \
-                                        self.boolPostA, checkInner)
-                lastBN += len(BurstData)
-
-                if BurstData.any():
-                    NG = BurstData[:, 1]
-                    NGII = BurstData[:, 2]
-                    NGT = BurstData[:, 3]
-                    NR = BurstData[:, 4]
-                    NRII = BurstData[:, 5]
-                    NRT = BurstData[:, 6]
-                    NR0 = BurstData[:, 7]
-                    NR0II = BurstData[:, 8]
-                    NR0T = BurstData[:, 9]
-                    BGII = BurstData[:, 10]
-                    BGT = BurstData[:, 11]
-                    BRII = BurstData[:, 12]
-                    BRT = BurstData[:, 13]
-                    BR0II = BurstData[:, 14]
-                    BR0T = BurstData[:, 15]
-                    TB = BurstData[:, 16]
-                    valueCDE = BurstData[:, 17]
-                    valueCDE2 = BurstData[:, 18]
-                    dtGR_TR0 = BurstData[:, 19]
-                    tauArrD = BurstData[:, 20]
-                    tauArrA = BurstData[:, 21]
-                    FGII = NGII - BGII * TB
-                    FGT = NGT - BGT * TB
-                    FRII = NRII - BRII * TB
-                    FRT = NRT - BRT * TB
-                    FR0II = NR0II - BR0II * TB
-                    FR0T = NR0T - BR0T * TB
-
-                    FG = FGII + FGT
-                    FR = FRII + FRT
-                    FR0 = FR0II + FR0T
-
-                    E = FR / (FG + FR)
-                    S = (FG + FR) / (FG + FR + FR0)
-                    rGG = (FGII - FGT) / (FGII + 2 * FGT)
-                    rRR = (FR0II - FR0T) / (FR0II + 2 * FR0T)
-
-                    # perform dynamic append on list(arrData)
-                    # if its empty just fill else stack current iteration to the old one
-
-                    if arrData == []:
-                        arrData = np.array([E, S, rGG, rRR, tauArrD, tauArrA, valueCDE, valueCDE2, dtGR_TR0]).T
-
-
-                    else:
-                        arrData = np.append(arrData,
-                                            np.array([E, S, rGG, rRR, tauArrD, tauArrA, valueCDE, valueCDE2,
-                                                      dtGR_TR0]).T, axis=0)
-
-                    plot1 = ax1.scatter(arrData[:, 0], arrData[:, 1], c='b', s=1)
-                    ax1.set_xlim([-0.1, 1.1])
-                    ax1.set_ylim([-0.1, 1.1])
-                    ax1.set_xlabel('E')
-                    ax1.set_ylabel('S')
-
-                    plot2 = ax2.scatter(arrData[:, 0], arrData[:, 6], c='b', s=1)
-                    ax2.set_xlim([-0.1, 1.1])
-                    ax2.set_ylim([0, 80])
-                    ax2.set_xlabel('E')
-                    ax2.set_ylabel('FRET-2CDE')
-
-                    plot3 = ax3.scatter(arrData[:, 4], arrData[:, 2], c='g', s=1)
-                    plot3_1 = ax3.scatter(arrData[:, 5], arrData[:, 3], c='r', s=1)
-                    ax3.set_xlim([0, 8])
-                    ax3.set_ylim([-0.2, 0.5])
-                    ax3.set_xlabel('\u03C4 (ns)')
-                    ax3.set_ylabel('r')
-
-                    plot4 = ax4.scatter(arrData[:, 7], arrData[:, 8], c='b', s=1)
-                    ax4.set_xlim([0, 100])
-
-                    limYax4 = np.max([np.max(arrData[:, 8]) - np.min(arrData[:, 8])])
-                    if limYax4 != np.nan:
-                        ax4.set_ylim([-limYax4, limYax4])
-
-                    ax4.set_xlabel('ALEX-2CDE')
-                    ax4.set_ylabel('T_G_R-T_R_0')
-
-                    plot5 = ax5.scatter(arrData[:, 4], arrData[:, 0], c='b', s=1)
-                    ax5.set_ylim([-0.1, 1.1])
-                    ax5.set_xlim([0, 6])
-                    ax5.set_xlabel('\u03C4 D(A) (ns)')
-                    ax5.set_ylabel('E')
-
-                    plot6 = ax6.scatter(arrData[:, 5], arrData[:, 0], c='b', s=1)
-                    ax6.set_ylim([-0.1, 1.1])
-                    ax6.set_xlim([0, 6])
-                    ax6.set_xlabel('\u03C4 A (ns)')
-                    ax6.set_ylabel('E')
-
-                    plt.pause(0.01)
-
-                    fig.tight_layout()
-                    plt.show()
-
-            plt.close()
-            print(f'Took: {time.time()-start} s')
-        print(f'Total time: {time.time()-start}')
-
+            file_object = open('/Users/philipp/Desktop/Work/WHK Schlierf Group/smFRET_Software/speed_tests/times.txt', 'a')
+            file_object.write(f'Time for ParBat run: {time.time()-start}')
+        except:
+            pass
     def IPTButtonEvent(self):
         # event after IPT button pressed
         # --> Placeholder backend
-        print('IPT button pressed')
         pass
 
     def get_current_settings(self):
         # read Setting Values
         # get integer values of boxes
         self.setLeeFilter = int(self.leeFilterBox.text())
-        self.gGG = float(self.gGGBox.text())
-        self.gRR = float(self.gRRBox.text())
         self.threIT = float(self.maxInterTime.text())
         self.threITN = float(self.minInterTimeNoise.text())
         self.minPhs = int(self.minTotal.text())
         self.minGR = int(self.grBox.text())
         self.minR0 = int(self.r0Box.text())
         self.filesBin = int(self.filesPerBinBox.text())
+        self.numCores = self.CoreSelectBox.text()
+
+        # for tau
+        self.tauFRET = float(self.tauFRETbox.text())
+        self.tauALEX = float(self.tauALEXbox.text())
+
+        if self.numCores == 'Auto':
+            self.numCores = -2
+        else:
+            try:
+                self.numCores = int(self.numCores)
+                if self.numCores > multiprocessing.cpu_count():
+                    self.numCores = multiprocessing.cpu_count()
+
+                elif self.numCores == 0:
+                    self.numCores = 1
+
+            except ValueError:
+                print('Give proper core number as integer')
 
 
         self.suffix = self.fileSuffixBox.text()
@@ -813,6 +711,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.boolTotal = self.minTotalTick.isChecked()
         self.thirty_thirty = self.thirtythirtyCheck.isChecked()
 
+
     def get_settings_dict(self):
         self.get_current_settings() #get current settings just in case they are not updated
         self.settings_dict = dict() #init dict for output
@@ -820,15 +719,15 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         # setting values do have to have key equivalent to the setting "box" object name
         # all the integers/floats/general values
         self.settings_dict['leeFilterBox'] = self.setLeeFilter
-        self.settings_dict['gGGBox'] = self.gGG
-        self.settings_dict['gRRBox'] = self.gRR
         self.settings_dict['maxInterTime'] = self.threIT
         self.settings_dict['minInterTimeNoise'] = self.threITN
         self.settings_dict['minTotal'] = self.minPhs
         self.settings_dict['grBox'] = self.minGR
         self.settings_dict['r0Box'] = self.minR0
         self.settings_dict['filesPerBinBox'] = self.filesBin
-        self.settings_dict['filesPerBinBox'] = self.filesBin
+        self.settings_dict['tauFRETbox'] = self.tauFRET
+        self.settings_dict['tauALEXbox'] = self.tauALEX
+        self.settings_dict['CoreSelectBox'] = self.numCores
 
         #bools for the tickboxes
         self.settings_dict['flaCheckbox'] = self.boolFLA
@@ -877,7 +776,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         try:
             # change all the settings to values from the file
             for setting in settings_input.columns:
-
                 # if its not a bool its not a checkbox
                 if not isinstance(settings_input[setting].values[0], (np.bool_)):
                     getattr(self, f'{setting}') \
@@ -888,7 +786,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                         .setChecked(settings_input[setting].values[0])
 
             # refresh current view
-            self.init_execute()
+            if self.data_in:
+                self.init_execute()
 
         # exception if file format is not correct
         except AttributeError:
@@ -927,6 +826,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         # first filter
         indexSig = np.where(interLee < (self.threIT*1e6))[0]
         indexSigN = np.where(interLee > (self.threITN*1e6))[0]
+
+
+        if indexSig.size == 0 or indexSigN.size == 0:
+            print('Selected file has to much background noise')
+            return
 
         bStart, bLength = burstLoc(indexSig,1)
         bStartN, bLengthN = burstLoc(indexSigN, 1)
@@ -988,7 +892,16 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.interPht_plot.canvas.ax.plot(np.arange(0,7500), [self.threITN]*7500, c='r', ls='--')
 
         # display bursts and background
-        #self.interPht_plot.canvas.
+        bursts_found = len(bStartLong)
+        background_found = len(bStartLongN)
+
+
+        self.interPht_plot.canvas.ax.text(0.99, 0.98, f'Brusts: {bursts_found}\nBackground: {background_found}',
+                                          horizontalalignment='right',
+                                          verticalalignment='top',
+                                          transform=self.interPht_plot.canvas.ax.transAxes,
+                                          color='Red')
+
 
 
 
@@ -998,10 +911,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
 
 if __name__ == '__main__':
+
     app = QApplication(sys.argv)
-    app.setApplicationDisplayName("pyBat")
+    app.setApplicationDisplayName("pyBAT")
     app.setWindowIcon(QtGui.QIcon('requirements/batIcon.png'))
     w = MainWindow()
-    w.setWindowTitle('pyBat')
+    w.setWindowTitle('pyBAT')
     w.show()
     sys.exit(app.exec_())

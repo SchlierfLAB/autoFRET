@@ -4,7 +4,7 @@ import platform
 import os, subprocess
 
 # env name to be used for installation
-env_name = 'test_env_auto'
+env_name = 'smFRET96_ENV'
 
 # define some print cols
 class bcolors:
@@ -30,8 +30,10 @@ else:
 
 if system == 'Darwin':
     print(bcolors.OKBLUE + 'Start installing on Darwin (MacOS)')
+    # change name
+    env_name = 'smFRET_MAC_env'
     # get mac yml path
-    yml_mac_file = os.path.abspath('requirements/Simple_env.yml')
+    yml_mac_file = os.path.abspath('requirements/smFRET_ENV.yml')
     # test
     if not os.path.isfile(yml_mac_file):
         yml_mac_file = input('Could not grep Mac_enviroment_Bat_T.yml.\nPlease enter the '
@@ -61,7 +63,7 @@ if system == 'Darwin':
 elif system == 'Windows':
     print(bcolors.OKBLUE + 'Start installing on Windows')
     # get win yml path
-    yml_windows_file = os.path.abspath('requirements\Simple_env.yml')
+    yml_windows_file = os.path.abspath('requirements\smFRET_ENV.yml')
     # test
     if not os.path.isfile(yml_windows_file):
         yml_windows_file = input('Could not grep Windows_enviroment_Bat_T.yml.\nPlease enter the '

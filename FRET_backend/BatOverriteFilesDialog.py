@@ -11,7 +11,7 @@ class ask_override_files(QDialog):
         self.resize(250, 250)
         self.setLayout(self.grid)
 
-        self.decision = 'Stop'
+        self.current = 'Stop'
 
 
         radioButton = QRadioButton('Overwrite Files')
@@ -25,32 +25,38 @@ class ask_override_files(QDialog):
         self.grid.addWidget(radioButton, 1, 0)
 
         # provide option to give new suffix
-        suffix_box = QLineEdit()
-        suffix_box.setPlaceholderText('NewSuffix')
-        self.grid.addWidget(suffix_box,1,1)
+        self.suffix_box = QLineEdit()
+        self.suffix_box.setPlaceholderText('NewSuffix')
+        self.grid.addWidget(self.suffix_box,1,1)
 
-
-        # Stop is the default state
-        radioButton = QRadioButton('Stop')
-        radioButton.to_do = 'Stop'
-        radioButton.setChecked(True)
-        self.current = 'Stop'
-        radioButton.toggled.connect(self.updataState)
-        self.grid.addWidget(radioButton,2,0)
 
         # Close with selection button
         select_button = QPushButton("OK")
         select_button.clicked.connect(self.ClickEvent)
-        labelResult = QLabel()
-        self.grid.addWidget(select_button, 3,0)
+        self.grid.addWidget(select_button, 2,0)
+
+        # Close with stop button
+        stop_button = QPushButton("Stop")
+        stop_button.clicked.connect(self.StopPressEvent)
+        self.grid.addWidget(stop_button, 2,1)
 
     def updataState(self):
         self.current = str(self.sender().to_do)
 
     def ClickEvent(self):
+        # event for pressing OK button
         self.decision = self.current
+        print(self.current)
+        self.close()
 
-app = QApplication(sys.argv)
-screen = ask_override_files()
-screen.show()
-sys.exit(app.exec_())
+    def StopPressEvent(self):
+        # event for pressing stop button
+        self.decision = 'Stop'
+        self.close()
+
+if __name__ == '__main__':
+
+    app = QApplication(sys.argv)
+    screen = ask_override_files()
+    screen.show()
+    sys.exit(app.exec_())

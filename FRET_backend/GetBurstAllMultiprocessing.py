@@ -153,7 +153,7 @@ def histc(Inp, bin):
 
 
 
-def third_loop(roiRG, roiR0, interPhT, bLengthLong, bStartLong, Bursts, PhotonsSGR0):
+def third_loop(roiRG, roiR0, interPhT, bLengthLong, bStartLong, Bursts, PhotonsSGR0, tauFRET, tauALEX):
     # prefill = np.zeros(len(bLengthLong))
     arrAlex_2CDE_ = np.zeros(len(bLengthLong))
     arrFRET_2CDE_ = np.zeros(len(bLengthLong))
@@ -224,16 +224,16 @@ def third_loop(roiRG, roiR0, interPhT, bLengthLong, bStartLong, Bursts, PhotonsS
 
         # print((np.sum(macroGR) / len(macroGR) * 1e-6)-(np.sum(macroR0) / len(macroR0) * 1e-6))
 
-        arrFRET_2CDE_[i] = FRET_2CDE(macroR * 1e-6, macroG * 1e-6, 0.0125)
-        arrAlex_2CDE_[i] = Alex_2CDE(macroR0 * 1e-6, macroGR * 1e-6, 0.075)
+        arrFRET_2CDE_[i] = FRET_2CDE(macroR * 1e-6, macroG * 1e-6, tauFRET/1000)
+        arrAlex_2CDE_[i] = Alex_2CDE(macroR0 * 1e-6, macroGR * 1e-6, tauALEX/1000)
 
     return arrAlex_2CDE_, arrFRET_2CDE_, NG_, NGII_, NGT_, NR_, NRII_, NRT_, NR0_, NR0II_, NR0T_, TBurst_, TGR_, TR0_
 
 
 
-def getBurstAll(filename, pathname, suffix, lastBN, roiRG, roiR0, threIT, threIT2, minPhs, threAveT, IRF_G,
-                meanIRFG, IRF_R, meanIRFR, roiMLE_G, roiMLE_R, dtBin, setLeeFilter, boolFLA, boolTotal, minGR, minR0,
-                boolPostA, checkInner):
+def getBurstAll(filename, pathname, suffix, lastBN, roiRG, roiR0, threIT, threIT2, minPhs, threAveT, newIRF_G_II,\
+                newIRF_G_T, meanIRFG_II, meanIRFG_T, newIRF_R_II, newIRF_R_T, meanIRFR_II, meanIRFR_T, roiMLE_G,\
+                roiMLE_R, dtBin, setLeeFilter, boolFLA, boolTotal, minGR, minR0, boolPostA, checkInner, tauFRET, tauALEX):
 
 
     Photons_Raw = read_ht3_raw(pathname + '/' + filename, False)
@@ -257,6 +257,11 @@ def getBurstAll(filename, pathname, suffix, lastBN, roiRG, roiR0, threIT, threIT
     # threshold for inter photon time
     indexSig = np.argwhere((0.4 < interLee) & (interLee < (threIT*1000000)))
     indexSigN = np.argwhere(interLee > (threIT2*1000000))
+
+    if indexSig.size == 0 or indexSigN.size == 0:
+        # Print relevant file and return empty
+        print(f'The Current file {filename} has to much background and will not be analyzed')
+        return []
 
     # channel histogram
     strAllHIST = pathname + '/allHIST.npy'
@@ -297,7 +302,6 @@ def getBurstAll(filename, pathname, suffix, lastBN, roiRG, roiR0, threIT, threIT
         Bursts = np.zeros([int(np.sum(bLengthLong)),4])
         lInd = 0
 
-
         for i in range(np.size(bStartLong)):
 
             Bursts[lInd:lInd+int(bLengthLong[i]),:] = np.c_[np.ones(int(bLengthLong[i])).T * (i+1),
@@ -336,7 +340,6 @@ def getBurstAll(filename, pathname, suffix, lastBN, roiRG, roiR0, threIT, threIT
         # channel background histogram and background counts
         strHIST = pathname + '/backHIST.npy'
         dataN = np.load(strHIST, allow_pickle=True)
-
         for i in range(len(bStartLongN)):
 
             GapPhotons = PhotonsSGR0[bStartLongN[i]+1:bStartLongN[i]+int(bLengthLongN[i])+1,0:3]
@@ -387,6 +390,7 @@ def getBurstAll(filename, pathname, suffix, lastBN, roiRG, roiR0, threIT, threIT
             dataN.item().get('time')[0] = dataN.item().get('time')[0]+BackT/1e9
 
 
+
         # Save dataN
         np.save(strHIST, dataN)
 
@@ -411,13 +415,11 @@ def getBurstAll(filename, pathname, suffix, lastBN, roiRG, roiR0, threIT, threIT
             BR0T = 0
 
         # separate all number of photons
-
         arrAlex_2CDE_, arrFRET_2CDE_, NG_, NGII_, NGT_, NR_, NRII_, NRT_, NR0_, NR0II_, NR0T_, TBurst_, TGR_, TR0_ = \
-            third_loop(roiRG, roiR0, interPhT, bLengthLong, bStartLong, Bursts, PhotonsSGR0)
+            third_loop(roiRG, roiR0, interPhT, bLengthLong, bStartLong, Bursts, PhotonsSGR0, tauFRET, tauALEX)
 
         # 3rd filter
         # acceptor bleaching
-
 
         dTGR_TR0_ = TGR_ - TR0_
         dTGR_TR0_[np.isnan(TR0_)] = 9.9
@@ -446,8 +448,10 @@ def getBurstAll(filename, pathname, suffix, lastBN, roiRG, roiR0, threIT, threIT
 
         accBursts = np.array([])
 
-        tauArrD = np.zeros(len(accBIndex))
-        tauArrA = np.zeros(len(accBIndex))
+        tauArrD_II = np.zeros(len(accBIndex))
+        tauArrD_T = np.zeros(len(accBIndex))
+        tauArrA_II = np.zeros(len(accBIndex))
+        tauArrA_T = np.zeros(len(accBIndex))
 
         edges = np.arange(1, 4097)
 
@@ -474,20 +478,26 @@ def getBurstAll(filename, pathname, suffix, lastBN, roiRG, roiR0, threIT, threIT
                                 & (Bursts[:,1] == 4), 2]
             accMicroRII = Bursts[(Bursts[:,0] == accBIndex[i]+1)
                                  & ((Bursts[:,1] == 1)
-                                    & (Bursts[:,2]>=roiR0[0])
-                                    & (Bursts[:,2]<= roiR0[1])), 2]
+                                    & (Bursts[:,2] >= roiR0[0])
+                                    & (Bursts[:,2] <= roiR0[1])), 2]
             accMicroRT = Bursts[(Bursts[:,0] == accBIndex[i]+1)
                                 & ((Bursts[:,1] == 3)
-                                   & (Bursts[:,2]>=roiR0[0])
-                                   & (Bursts[:,2]<= roiR0[1])), 2]
+                                   & (Bursts[:,2] >= roiR0[0])
+                                   & (Bursts[:,2] <= roiR0[1])), 2]
 
-            hMicroGII, _ = histc(accMicroGII,edges)
+            hMicroGII, _ = histc(accMicroGII, edges)
             hMicroGT, _ = histc(accMicroGT, edges)
             hMicroG = hMicroGII[:] + hMicroGT[:]
 
-            hMicroRII, _ = histc(accMicroRII,edges)
+            hMicroRII, _ = histc(accMicroRII, edges)
             hMicroRT, _ = histc(accMicroRT, edges)
             hMicroR = hMicroRII[:] + hMicroRT[:]
+
+            # function defined IRF_G, meanIRFG, IRF_R, meanIRFR, roiMLE_G, roiMLE_R
+
+            roihMicroGII = hMicroGII[(roiMLE_G[0]-1):roiMLE_G[1]]
+            roihMicroGT = hMicroGT[(roiMLE_G[0]-1):roiMLE_G[1]]
+
             roihMicroG = hMicroG[(roiMLE_G[0]-1):roiMLE_G[1]]
 
 
@@ -495,28 +505,46 @@ def getBurstAll(filename, pathname, suffix, lastBN, roiRG, roiR0, threIT, threIT
                                           & (accMicroGII <= roiMLE_G[1])]
             roi_accMicroGT = accMicroGT[(roiMLE_G[0] <= accMicroGT)
                                         & (accMicroGT <= roiMLE_G[1])]
-            mean_roiMicroG = np.sum(np.append(roi_accMicroGII, roi_accMicroGT)) / \
-                             (len(roi_accMicroGII) + len(roi_accMicroGT))
+            mean_roiMicroGII = np.sum(roi_accMicroGII) / len(roi_accMicroGII)
 
+            mean_roiMicroGT = np.sum(roi_accMicroGT) / len(roi_accMicroGT)
 
             roihMicroR = hMicroR[roiMLE_R[0]:roiMLE_R[1]]
+
+            roihMicroRII = hMicroRII[roiMLE_R[0]:roiMLE_R[1]]
+            roihMicroRT = hMicroRT[roiMLE_R[0]:roiMLE_R[1]]
 
             roi_accMicroRII = accMicroRII[(roiMLE_R[0] <= accMicroRII)
                                           & (accMicroRII <= roiMLE_R[1])]
             roi_accMicroRT = accMicroRT[(roiMLE_R[0] <= accMicroRT)
                                         & (accMicroRT <= roiMLE_R[1])]
-            mean_roiMicroR = np.sum(np.append(roi_accMicroRII, roi_accMicroRT)) / \
-                             (len(roi_accMicroRII) + len(roi_accMicroRT))
+
+            mean_roiMicroRII = np.sum(roi_accMicroRII) / len(roi_accMicroRII)
+
+            mean_roiMicroRT = np.sum(roi_accMicroRT) / len(roi_accMicroRT)
 
 
-            if any(roihMicroG):
-                tauArrD[i] = LifeMLE(IRF_G, meanIRFG, roihMicroG, mean_roiMicroG, dtBin, boolFLA, roiRG[0])
+            # Def. conditions while differentiating GREEN (G) RED (R) and PRALLEL (II) + PERPENDICULAR (T)
+            # for each case
+
+
+            if any(roihMicroGII):
+                tauArrD_II[i] = LifeMLE(newIRF_G_II, meanIRFG_II, roihMicroGII, mean_roiMicroGII, dtBin, boolFLA)
             else:
-                tauArrD[i] = 0
-            if any(roihMicroR):
-                tauArrA[i] = LifeMLE(IRF_R, meanIRFR, roihMicroR, mean_roiMicroR, dtBin, boolFLA,0)
+                tauArrD_II[i] = 0
+            if any(roihMicroGT):
+                tauArrD_T[i] = LifeMLE(newIRF_G_T, meanIRFG_T, roihMicroGT, mean_roiMicroGT, dtBin, boolFLA)
             else:
-                tauArrA[i] = 0
+                tauArrD_T[i] = 0
+
+            if any(roihMicroRII):
+                tauArrA_II[i] = LifeMLE(newIRF_R_II, meanIRFR_II, roihMicroRII, mean_roiMicroRII, dtBin, boolFLA)
+            else:
+                tauArrA_II[i] = 0
+            if any(roihMicroRT):
+                tauArrA_T[i] = LifeMLE(newIRF_R_T, meanIRFR_T, roihMicroRT, mean_roiMicroRT, dtBin, boolFLA)
+            else:
+                tauArrA_T[i] = 0
 
 
         BurstData = np.array([(lastBN + np.arange(len(NG))+1).tolist(),
@@ -539,16 +567,17 @@ def getBurstAll(filename, pathname, suffix, lastBN, roiRG, roiR0, threIT, threIT
                                   [el[0] for el in arrFRET_2CDE],
                                   [el[0] for el in arrAlex_2CDE],
                                   [el[0] for el in dtGR_TR0],
-                                  tauArrD,
-                                  tauArrA,
+                                  tauArrD_II,
+                                  tauArrD_T,
+                                  tauArrA_II,
+                                  tauArrA_T,
                                   [el[0] for el in TGR]]).T
 
 
         # save burst data
         fileB = pathname + '/' + 'BData' + str(suffix)+'.bin'
 
-        #print('\n\n')
-        #print('Save BData to: ', fileB)
+
         with Path(fileB).open('ab') as f:
             np.save(f, BurstData, allow_pickle=True)
             print(f'Saved to: {fileB}')
@@ -564,8 +593,6 @@ def getBurstAll(filename, pathname, suffix, lastBN, roiRG, roiR0, threIT, threIT
             # append to the single file
             # https://stackoverflow.com/questions/30376581/save-numpy-array-in-append-mode
 
-            #print(accBursts)
-            #print('Save PData to: ', fileP)
             with Path(fileP).open('ab') as f:
                 np.save(f, accBursts, allow_pickle=True)
 
@@ -573,9 +600,9 @@ def getBurstAll(filename, pathname, suffix, lastBN, roiRG, roiR0, threIT, threIT
 
     return []
 
-def burst_fun(folder, ht3_locations, suffix, Brd_GGR,Brd_RR, threIT,threITN, minPhs, newIRF_G, meanIRFG, \
-              newIRF_R,  meanIRFR, dtBin, setLeeFilter, boolFLA,boolTotal ,minGR ,minR0, \
-              boolPostA):
+def burst_fun(folder, ht3_locations, suffix, Brd_GGR,Brd_RR, threIT,threITN, minPhs, newIRF_G_II, newIRF_G_T, meanIRFG_II, meanIRFG_T,\
+              newIRF_R_II, newIRF_R_T,  meanIRFR_II, meanIRFR_T, dtBin, setLeeFilter, boolFLA,boolTotal ,minGR ,minR0, \
+              boolPostA, tauFRET, tauALEX):
 
     checkInner = np.array([0])
     arrData = []
@@ -604,11 +631,11 @@ def burst_fun(folder, ht3_locations, suffix, Brd_GGR,Brd_RR, threIT,threITN, min
         fileName = file.split('\\')[-1]
         folderName = '/'.join(file.split('\\')[0:-1])
 
-        BurstData = getBurstAll(fileName, folderName,suffix, lastBN, Brd_GGR,Brd_RR, threIT \
-                                    ,threITN, minPhs, 10,  newIRF_G, meanIRFG, newIRF_R, \
-                                    meanIRFR, Brd_GGR, Brd_RR, dtBin,setLeeFilter, \
-                                boolFLA, boolTotal,minGR,minR0, \
-                                boolPostA, checkInner)
+        BurstData = getBurstAll(fileName, folderName,suffix, lastBN, Brd_GGR, Brd_RR, threIT,\
+                                threITN, minPhs, 10, newIRF_G_II, newIRF_G_T, meanIRFG_II, meanIRFG_T,\
+                                newIRF_R_II, newIRF_R_T, meanIRFR_II, meanIRFR_T, Brd_GGR, Brd_RR, dtBin,setLeeFilter,\
+                                boolFLA, boolTotal,minGR,minR0, boolPostA, checkInner, tauFRET, tauALEX)
+
         lastBN += len(BurstData)
 
 
@@ -622,7 +649,6 @@ def get_files(folder):
                         ht3_locations[name[0:3]] = ht3_locations[name[0:3]] + [os.path.join(path, name)]
                     except KeyError:
                         ht3_locations[name[0:3]] = [os.path.join(path, name)]
-
     except FileNotFoundError:
         return
 
@@ -659,9 +685,9 @@ def check_for_bdata_files(eval_folder, suffix):
 
 
 
-def par_burst(eval_folder, suffix, Brd_GGR, Brd_RR, threIT, threIT2, minPhs, IRF_G, meanIRFG, IRF_R, \
-              meanIRFR, dtBin, setLeeFilter, boolFLA, boolTotal, minGR, minR0, boolPostA, \
-              threads=-2):
+def par_burst(eval_folder, suffix, Brd_GGR, Brd_RR, threIT, threIT2, minPhs, IRF_G_II, IRF_G_T, meanIRFG_II,\
+              meanIRFG_T, IRF_R_II, IRF_R_T, meanIRFR_II, meanIRFR_T, dtBin, setLeeFilter, boolFLA, boolTotal, minGR,\
+              minR0, boolPostA, tauFRET, tauALEX, threads=-2):
 
 
     start_multi_run = time.time()
@@ -669,22 +695,24 @@ def par_burst(eval_folder, suffix, Brd_GGR, Brd_RR, threIT, threIT2, minPhs, IRF
 
     Parallel(n_jobs=threads, prefer='processes')(delayed(burst_fun)(folder, eval_folder, suffix, Brd_GGR, Brd_RR, \
                                                                    threIT, threIT2, minPhs, \
-                                                                   IRF_G, meanIRFG, IRF_R, meanIRFR, \
+                                                                   IRF_G_II, IRF_G_T, meanIRFG_II, meanIRFG_T, IRF_R_II,
+                                                                   IRF_R_T, meanIRFR_II,meanIRFR_T, \
                                                                    dtBin, setLeeFilter, boolFLA, \
-                                                                   boolTotal, minGR, minR0, boolPostA) \
+                                                                   boolTotal, minGR, minR0, boolPostA, tauFRET, tauALEX)\
                                                 for folder in eval_folder.keys())
 
     print(f'Multi thread run with {threads} threads took: ', time.time() - start_multi_run)
 
 
 if __name__ == '__main__':
-    test_folder_path = '/Users/philipp/Desktop/Work/WHK Schlierf Group/smFRET_Software/speed_tests/eval_folder'
+    test_folder_path = '/Users/philipp/Desktop/Work/WHK Schlierf Group/smFRET_Software/speed_tests' \
+                       '/DeadLockMEas/DeadLockFull/E11'
 
 
     threIT, threIT2, minPhs, threAveT, IRF_G, meanIRFG, IRF_R, meanIRFR, dtBin, setLeeFilter, boolFLA, \
     boolTotal, minGR, minR0, boolPostA, checkInner = get_input()
 
-    threads = -3  # multiprocessing.cpu_count()  # often confused with cores
+    threads = 1  # multiprocessing.cpu_count()  # often confused with cores
 
     par_burst(test_folder_path, 'test', np.array([12,1387]), np.array([1687,1913]), threIT[0], threIT2[0], minPhs[0], IRF_G[0], meanIRFG[0], IRF_R[0], \
               meanIRFR[0], dtBin[0], setLeeFilter[0][0], boolFLA[0], boolTotal[0], minGR[0], minR0[0], boolPostA[0], \

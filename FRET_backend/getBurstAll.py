@@ -27,9 +27,9 @@ def histc(Inp, bin):
         count[i-1] += 1
     return [count, bin_map]
 
-def getBurstAll(filename, pathname, suffix, lastBN, roiRG, roiR0, threIT, threIT2, minPhs, threAveT, IRF_G,
-                meanIRFG, IRF_R, meanIRFR, roiMLE_G, roiMLE_R, dtBin, setLeeFilter, boolFLA, gGG, gRR, boolTotal, minGR, minR0,
-                boolPostA, checkInner):
+def getBurstAll(filename, pathname, suffix, lastBN, roiRG, roiR0, threIT, threIT2, minPhs, threAveT, newIRF_G_II,
+                newIRF_G_T, meanIRFG_II, meanIRFG_T, newIRF_R_II, newIRF_R_T, meanIRFR_II, meanIRFR_T, roiMLE_G,
+                roiMLE_R, dtBin, setLeeFilter, boolFLA, gGG, gRR, boolTotal, minGR, minR0, boolPostA, checkInner):
 
     Photons_Raw = read_ht3_raw(pathname + '/' + filename, False)
     Photons = Photons_Raw[(Photons_Raw[:,0] != 15) & ((Photons_Raw[:,1] >= roiRG[0]) & (Photons_Raw[:,1] <= roiRG[1]) |
@@ -37,12 +37,6 @@ def getBurstAll(filename, pathname, suffix, lastBN, roiRG, roiR0, threIT, threIT
 
     # keep just real data and seperate them in channels
     PhotonsSGR0 = Photons[(Photons[:,0]==1) | (Photons[:,0]==2) | (Photons[:,0]==3) | (Photons[:,0]==4), 0:3]
-    PhotonsSG = Photons[(Photons[:,0]==2) | (Photons[:,0]==4) ,1:3]
-    PhotonsSR = Photons[((Photons[:,0]==1) | (Photons[:,0]==3)) & (Photons[:,1]>=roiRG[0]) & (Photons[:,1]<=roiRG[1]) ,1:3]
-    PhotonsSR0 = Photons[((Photons[:,0]==1) | (Photons[:,0]==3)) & (Photons[:,1] >= roiR0[0]) & (Photons[:,1] <= roiR0[1]),1:3]
-
-    #del Photons
-
 
     # inter-photon time
     interPhT = PhotonsSGR0[1:,2] - PhotonsSGR0[0:-1,2]
@@ -53,6 +47,11 @@ def getBurstAll(filename, pathname, suffix, lastBN, roiRG, roiR0, threIT, threIT
     # threshold for inter photon time
     indexSig = np.argwhere((0.4 < interLee) & (interLee < (threIT*1000000)))
     indexSigN = np.argwhere(interLee > (threIT2*1000000))
+
+    if indexSig.size == 0 or indexSigN.size == 0:
+        # Print relevant file and return empty
+        print(f'The Current file {filename} has to much background and will not be analyzed')
+        return []
 
     # channel histogram
     strAllHIST = pathname + '/allHIST.npy'
@@ -92,7 +91,7 @@ def getBurstAll(filename, pathname, suffix, lastBN, roiRG, roiR0, threIT, threIT
 
         Bursts = np.zeros([int(np.sum(bLengthLong)),4])
         lInd = 0
-        #print(np.size(bStartLong))
+
         for i in range(np.size(bStartLong)):
 
             Bursts[lInd:lInd+int(bLengthLong[i]),:] = np.c_[np.ones(int(bLengthLong[i])).T * (i+1),
@@ -103,14 +102,14 @@ def getBurstAll(filename, pathname, suffix, lastBN, roiRG, roiR0, threIT, threIT
             hAll,_ = histc(Photons_Raw[(Photons_Raw[:,0] != 15)
                                        & ((Photons_Raw[:,0] == 1) | (Photons_Raw[:,0]==3))
                                        & ((Photons_Raw[:,2] >= PhotonsSGR0[bStartLong[i],2])
-                                          &  (Photons_Raw[:,2] <= PhotonsSGR0[bStartLong[i] + int(bLengthLong[i]), 2])),1]
+                                          & (Photons_Raw[:,2] <= PhotonsSGR0[bStartLong[i] + int(bLengthLong[i]), 2])),1]
                            , edges)
 
             dataAll.item().get('photonHIST')[:,0] = dataAll.item().get('photonHIST')[:,0] + hAll
             hAll,_ = histc(Photons_Raw[(Photons_Raw[:,0] != 15)
                                        & ((Photons_Raw[:,0] == 2) | (Photons_Raw[:,0]==4))
                                        & ((Photons_Raw[:,2] >= PhotonsSGR0[bStartLong[i],2])
-                                          &  (Photons_Raw[:,2] <= PhotonsSGR0[bStartLong[i] + int(bLengthLong[i]), 2])),1]
+                                          & (Photons_Raw[:,2] <= PhotonsSGR0[bStartLong[i] + int(bLengthLong[i]), 2])),1]
                            , edges)
             dataAll.item().get('photonHIST')[:,1] = dataAll.item().get('photonHIST')[:,1] + hAll
 
@@ -131,8 +130,6 @@ def getBurstAll(filename, pathname, suffix, lastBN, roiRG, roiR0, threIT, threIT
         # channel background histogram and background counts
         strHIST = pathname + '/backHIST.npy'
         dataN = np.load(strHIST, allow_pickle=True)
-
-
         for i in range(len(bStartLongN)):
 
             GapPhotons = PhotonsSGR0[bStartLongN[i]+1:bStartLongN[i]+int(bLengthLongN[i])+1,0:3]
@@ -312,8 +309,11 @@ def getBurstAll(filename, pathname, suffix, lastBN, roiRG, roiR0, threIT, threIT
 
         accBursts = np.array([])
 
-        tauArrD = np.zeros(len(accBIndex))
-        tauArrA = np.zeros(len(accBIndex))
+
+        tauArrD_II = np.zeros(len(accBIndex))
+        tauArrD_T = np.zeros(len(accBIndex))
+        tauArrA_II = np.zeros(len(accBIndex))
+        tauArrA_T = np.zeros(len(accBIndex))
 
         edges = np.arange(1, 4097)
 
@@ -339,49 +339,67 @@ def getBurstAll(filename, pathname, suffix, lastBN, roiRG, roiR0, threIT, threIT
                                 & (Bursts[:,1] == 4), 2]
             accMicroRII = Bursts[(Bursts[:,0] == accBIndex[i]+1)
                                  & ((Bursts[:,1] == 1)
-                                    & (Bursts[:,2]>=roiR0[0])
-                                    & (Bursts[:,2]<= roiR0[1])), 2]
+                                    & (Bursts[:,2] >= roiR0[0])
+                                    & (Bursts[:,2] <= roiR0[1])), 2]
             accMicroRT = Bursts[(Bursts[:,0] == accBIndex[i]+1)
                                 & ((Bursts[:,1] == 3)
-                                   & (Bursts[:,2]>=roiR0[0])
-                                   & (Bursts[:,2]<= roiR0[1])), 2]
+                                   & (Bursts[:,2] >= roiR0[0])
+                                   & (Bursts[:,2] <= roiR0[1])), 2]
 
-            hMicroGII, _ = histc(accMicroGII,edges)
+            hMicroGII, _ = histc(accMicroGII, edges)
             hMicroGT, _ = histc(accMicroGT, edges)
-            hMicroG = gGG * hMicroGII[:] + hMicroGT[:]
+            hMicroG = hMicroGII[:] + hMicroGT[:]
 
-            hMicroRII, _ = histc(accMicroRII,edges)
+            hMicroRII, _ = histc(accMicroRII, edges)
             hMicroRT, _ = histc(accMicroRT, edges)
-            hMicroR = gRR * hMicroRII[:] + hMicroRT[:]
-            roihMicroG = hMicroG[(roiMLE_G[0]-1):roiMLE_G[1]]
+            hMicroR = hMicroRII[:] + hMicroRT[:]
 
+            roihMicroGII = hMicroGII[(roiMLE_G[0]-1):roiMLE_G[1]]
+            roihMicroGT = hMicroGT[(roiMLE_G[0]-1):roiMLE_G[1]]
 
             roi_accMicroGII = accMicroGII[(roiMLE_G[0] <= accMicroGII)
                                           & (accMicroGII <= roiMLE_G[1])]
             roi_accMicroGT = accMicroGT[(roiMLE_G[0] <= accMicroGT)
                                         & (accMicroGT <= roiMLE_G[1])]
-            mean_roiMicroG = np.sum(np.append(gGG * roi_accMicroGII, roi_accMicroGT)) / \
-                             (gGG*len(roi_accMicroGII) + len(roi_accMicroGT))
+            mean_roiMicroGII = np.sum(roi_accMicroGII) / len(roi_accMicroGII)
 
+            mean_roiMicroGT = np.sum(roi_accMicroGT) / len(roi_accMicroGT)
 
             roihMicroR = hMicroR[roiMLE_R[0]:roiMLE_R[1]]
+
+            roihMicroRII = hMicroRII[roiMLE_R[0]:roiMLE_R[1]]
+            roihMicroRT = hMicroRT[roiMLE_R[0]:roiMLE_R[1]]
 
             roi_accMicroRII = accMicroRII[(roiMLE_R[0] <= accMicroRII)
                                           & (accMicroRII <= roiMLE_R[1])]
             roi_accMicroRT = accMicroRT[(roiMLE_R[0] <= accMicroRT)
                                         & (accMicroRT <= roiMLE_R[1])]
-            mean_roiMicroR = np.sum(np.append(gRR * roi_accMicroRII, roi_accMicroRT)) / \
-                             (gRR*len(roi_accMicroRII) + len(roi_accMicroRT))
+
+            mean_roiMicroRII = np.sum(roi_accMicroRII) / len(roi_accMicroRII)
+
+            mean_roiMicroRT = np.sum(roi_accMicroRT) / len(roi_accMicroRT)
 
 
-            if any(roihMicroG):
-                tauArrD[i] = LifeMLE(IRF_G, meanIRFG, roihMicroG, mean_roiMicroG, dtBin, boolFLA, roiRG[0])
+            # Def. conditions while differentiating GREEN (G) RED (R) and PRALLEL (II) + PERPENDICULAR (T)
+            # for each case
+
+            if any(roihMicroGII):
+                tauArrD_II[i] = LifeMLE(newIRF_G_II, meanIRFG_II, roihMicroGII, mean_roiMicroGII, dtBin, boolFLA)
             else:
-                tauArrD[i] = 0
-            if any(roihMicroR):
-                tauArrA[i] = LifeMLE(IRF_R, meanIRFR, roihMicroR, mean_roiMicroR, dtBin, boolFLA,0)
+                tauArrD_II[i] = 0
+            if any(roihMicroGT):
+                tauArrD_T[i] = LifeMLE(newIRF_G_T, meanIRFG_T, roihMicroGT, mean_roiMicroGT, dtBin, boolFLA)
             else:
-                tauArrA[i] = 0
+                tauArrD_T[i] = 0
+
+            if any(roihMicroRII):
+                tauArrA_II[i] = LifeMLE(newIRF_R_II, meanIRFR_II, roihMicroRII, mean_roiMicroRII, dtBin, boolFLA)
+            else:
+                tauArrA_II[i] = 0
+            if any(roihMicroRT):
+                tauArrA_T[i] = LifeMLE(newIRF_R_T, meanIRFR_T, roihMicroRT, mean_roiMicroRT, dtBin, boolFLA)
+            else:
+                tauArrA_T[i] = 0
 
         BurstData = np.array([(lastBN + np.arange(len(NG))+1).tolist(),
                                   [el[0] for el in NG],
@@ -403,16 +421,17 @@ def getBurstAll(filename, pathname, suffix, lastBN, roiRG, roiR0, threIT, threIT
                                   [el[0] for el in arrFRET_2CDE],
                                   [el[0] for el in arrAlex_2CDE],
                                   [el[0] for el in dtGR_TR0],
-                                  tauArrD,
-                                  tauArrA,
+                                  tauArrD_II,
+                                  tauArrD_T,
+                                  tauArrA_II,
+                                  tauArrA_T,
                                   [el[0] for el in TGR]]).T
 
 
         # save burst data
         fileB = pathname + '/' + 'BData' + str(suffix)+'.bin'
 
-        #print('\n\n')
-        #print('Save BData to: ', fileB)
+
         with Path(fileB).open('ab') as f:
             np.save(f, BurstData, allow_pickle=True)
             print(f'Saved to: {fileB}')
@@ -428,8 +447,6 @@ def getBurstAll(filename, pathname, suffix, lastBN, roiRG, roiR0, threIT, threIT
             # append to the single file
             # https://stackoverflow.com/questions/30376581/save-numpy-array-in-append-mode
 
-            #print(accBursts)
-            #print('Save PData to: ', fileP)
             with Path(fileP).open('ab') as f:
                 np.save(f, accBursts, allow_pickle=True)
 

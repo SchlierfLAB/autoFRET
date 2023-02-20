@@ -79,13 +79,15 @@ class OTF_Burst():
             lastBN = np.load(self.str_path_lastBN)
 
             # trigger get burst all
-            Bursts = getBurstAll(filename=file_name, pathname=file_root, suffix='_test', lastBN=lastBN, \
-                                 roiRG=self.roiMLE_G, roiR0=self.roiMLE_R, threIT=self.threIT, threIT2=self.threITN, \
-                                 minPhs=self.minPhs, threAveT=10, IRF_G=self.newIRF_G, meanIRFG=self.meanIRFG, \
-                                 IRF_R=self.newIRF_R, meanIRFR=self.meanIRFR, roiMLE_G=self.roiMLE_G, \
-                                 roiMLE_R=self.roiMLE_R, dtBin=self.dtBin, setLeeFilter=self.setLeeFilter, \
-                                 boolFLA=self.boolFLA, gGG=self.gGG, gRR=self.gRR, boolTotal=self.boolTotal, \
-                                 minGR=self.minGR, minR0=self.minR0, boolPostA=self.boolPostA, checkInner=False)
+            Bursts = getBurstAll(filename=file_name, pathname=file_root, suffix='', lastBN=lastBN,
+                                 roiRG=self.roiMLE_G, roiR0=self.roiMLE_R, threIT=self.threIT, threIT2=self.threITN,
+                                 minPhs=self.minPhs, threAveT=10, newIRF_G_II=self.newIRF_G_II,
+                                 newIRF_G_T=self.newIRF_G_T,  meanIRFG_II=self.meanIRFG_II, meanIRFG_T=self.meanIRFG_T,
+                                 newIRF_R_II=self.newIRF_R_II, newIRF_R_T=self.newIRF_R_T, meanIRFR_II=self.meanIRFR_II,
+                                 meanIRFR_T=self.meanIRFR_T, roiMLE_G=self.roiMLE_G, roiMLE_R=self.roiMLE_R,
+                                 dtBin=self.dtBin, setLeeFilter=self.setLeeFilter, boolFLA=self.boolFLA, gGG=self.gGG,
+                                 gRR=self.gRR, boolTotal=self.boolTotal, minGR=self.minGR, minR0=self.minR0,
+                                 boolPostA=self.boolPostA, checkInner=False)
 
             # save lastBN in running file folder wise
             lastBN += len(Bursts)
@@ -101,13 +103,15 @@ class OTF_Burst():
             self.check_running_files(folder_path=file_root)
             lastBN = np.load(self.str_path_lastBN)
 
-            Bursts = getBurstAll(filename=file_name, pathname=file_root, suffix='_test', lastBN=lastBN, \
-                                 roiRG=self.roiMLE_G, roiR0=self.roiMLE_R, threIT=self.threIT, threIT2=self.threITN, \
-                                 minPhs=self.minPhs, threAveT=10, IRF_G=self.newIRF_G, meanIRFG=self.meanIRFG, \
-                                 IRF_R=self.newIRF_R, meanIRFR=self.meanIRFR, roiMLE_G=self.roiMLE_G, \
-                                 roiMLE_R=self.roiMLE_R, dtBin=self.dtBin, setLeeFilter=self.setLeeFilter, \
-                                 boolFLA=self.boolFLA, gGG=self.gGG, gRR=self.gRR, boolTotal=self.boolTotal, \
-                                 minGR=self.minGR, minR0=self.minR0, boolPostA=self.boolPostA, checkInner=False)
+            Bursts = getBurstAll(filename=file_name, pathname=file_root, suffix='', lastBN=lastBN,
+                                 roiRG=self.roiMLE_G, roiR0=self.roiMLE_R, threIT=self.threIT, threIT2=self.threITN,
+                                 minPhs=self.minPhs, threAveT=10, newIRF_G_II=self.newIRF_G_II,
+                                 newIRF_G_T=self.newIRF_G_T,  meanIRFG_II=self.meanIRFG_II, meanIRFG_T=self.meanIRFG_T,
+                                 newIRF_R_II=self.newIRF_R_II, newIRF_R_T=self.newIRF_R_T, meanIRFR_II=self.meanIRFR_II,
+                                 meanIRFR_T=self.meanIRFR_T, roiMLE_G=self.roiMLE_G, roiMLE_R=self.roiMLE_R,
+                                 dtBin=self.dtBin, setLeeFilter=self.setLeeFilter, boolFLA=self.boolFLA, gGG=self.gGG,
+                                 gRR=self.gRR, boolTotal=self.boolTotal, minGR=self.minGR, minR0=self.minR0,
+                                 boolPostA=self.boolPostA, checkInner=False)
 
             # save lastBN in running file folder wise
             lastBN += len(Bursts)
@@ -205,16 +209,51 @@ class OTF_Burst():
         IRF_G = IRF_AllG[1] + IRF_AllG[3]
         IRF_G = IRF_G - np.mean(IRF_G[int(numCh) - 601:int(numCh) - 100])
 
-        self.newIRF_G = IRF_G[Brd_GGR[0] - 1:Brd_GGR[1]]
+        # split parallel (II) and perpendicular (T) parts
 
-        self.meanIRFG = (np.sum(np.arange(1, len(self.newIRF_G) + 1, 1) * self.newIRF_G) / np.sum(self.newIRF_G) +
-                         Brd_GGR[0]) * dtBin / 1000
+        IRF_G_II = IRF_AllG[1]
+        IRF_G_T = IRF_AllG[3]
+
+        IRF_G_II = IRF_G_II - np.mean(IRF_G_II[int(numCh) - 601:int(numCh) - 100])
+        IRF_G_T = IRF_G_T - np.mean(IRF_G_T[int(numCh) - 601:int(numCh) - 100])
+
+        self.newIRF_G_II = IRF_G_II[Brd_GGR[0] - 1:Brd_GGR[1]]
+        self.newIRF_G_T = IRF_G_T[Brd_GGR[0] - 1:Brd_GGR[1]]
+
+        self.meanIRFG_II = (np.sum(np.arange(1, len(self.newIRF_G_II) + 1, 1) * self.newIRF_G_II) / np.sum(
+            self.newIRF_G_II) +
+                       Brd_GGR[0]) * dtBin / 1000
+        self.meanIRFG_T = (np.sum(np.arange(1, len(self.newIRF_G_T) + 1, 1) * self.newIRF_G_T) / np.sum(self.newIRF_G_T) +
+                      Brd_GGR[0]) * dtBin / 1000
+
 
         RHHD_R = read_hhd(self.second_hhd)
 
         IRF_AllR = RHHD_R[0]
         IRF_R = IRF_AllR[0] + IRF_AllR[2]
         IRF_R = IRF_R - np.mean(IRF_R[int(midCh) - 501:int(midCh) - 100])
+
+        IRF_R_II = IRF_AllR[0]
+        IRF_R_T = IRF_AllR[2]
+
+        IRF_R_II = IRF_R_II - np.mean(IRF_R_II[int(midCh) - 501:int(midCh) - 100])
+        IRF_R_T = IRF_R_T - np.mean(IRF_R_T[int(midCh) - 501:int(midCh) - 100])
+
+        self.newIRF_R_II = IRF_R_II[Brd_GGR[0] - 1:Brd_GGR[1]]
+        self.newIRF_R_T = IRF_R_T[Brd_GGR[0] - 1:Brd_GGR[1]]
+
+        self.meanIRFR_II = (np.sum(np.arange(1, len(self.newIRF_R_II) + 1, 1) * self.newIRF_R_II) / np.sum(
+            self.newIRF_R_II) +
+                       Brd_RR[0]) * dtBin / 1000
+        self.meanIRFR_T = (np.sum(np.arange(1, len(self.newIRF_R_T) + 1, 1) * self.newIRF_R_T) / np.sum(self.newIRF_R_T) +
+                      Brd_RR[0]) * dtBin / 1000
+
+
+        self.newIRF_G = IRF_G[Brd_GGR[0] - 1:Brd_GGR[1]]
+
+        self.meanIRFG = (np.sum(np.arange(1, len(self.newIRF_G) + 1, 1) * self.newIRF_G) / np.sum(self.newIRF_G) +
+                         Brd_GGR[0]) * dtBin / 1000
+
 
         self.newIRF_R = IRF_R[Brd_RR[0] - 1:Brd_RR[1]]
 

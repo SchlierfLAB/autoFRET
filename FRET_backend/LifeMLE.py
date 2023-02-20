@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.interpolate import CubicSpline, interp1d
 
-def LifeMLE(IRF, meanIRF, Data, meanData, dtBin, boolFLA, roiLeft):
+def LifeMLE(IRF, meanIRF, Data, meanData, dtBin, boolFLA):
 
     if any(Data) and (np.sum(Data) != 0):
 
