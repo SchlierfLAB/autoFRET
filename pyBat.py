@@ -85,6 +85,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         # well thats defined for some reason :D
         self.BinSize = 1
 
+        self.Brd_GGR = []
+        self.Brd_RR = []
+
     def irf_shifts(self):
         sender = self.sender()
         if sender == self.PlusIRFButton_Top:
@@ -327,6 +330,20 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.plot_lifetime2()
         self.plot_interPht()
 
+        # If refresh after first init it is still drawn
+        if self.Brd_GGR:
+            self.lifetime1_plot.canvas.ax.axvspan(self.Brd_GGR[0], self.Brd_GGR[1], facecolor='green', alpha=0.4)
+            self.lifetime2_plot.canvas.ax.axvspan(self.Brd_GGR[0], self.Brd_GGR[1], facecolor='green', alpha=0.4)
+            self.lifetime1_plot.canvas.draw()
+            self.lifetime2_plot.canvas.draw()
+        if self.Brd_RR:
+            self.lifetime2_plot.canvas.ax.axvspan(self.Brd_RR[0], self.Brd_RR[1], facecolor='red', alpha=0.4)
+            self.lifetime2_plot.canvas.draw()
+            self.Filter()
+            self.Show_Bursts()
+
+
+
 
 
     def GG_GR_Slot(self):
@@ -334,7 +351,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         # change cursor style
         self.lifetime1_plot.setCursor(QtCore.Qt.CrossCursor)
 
-        self.Brd_GGR = []
         self.cid = self.lifetime1_plot.canvas.mpl_connect("button_press_event", self.get_Brd_GGR)
 
 
@@ -371,8 +387,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def RR_Slot(self):
         # change cursor style
         self.lifetime2_plot.setCursor(QtCore.Qt.CrossCursor)
-        self.Brd_RR = []
-        # self.yG = []
         self.cid = self.lifetime2_plot.canvas.mpl_connect("button_press_event", self.get_Brd_RR)
 
     def get_Brd_RR(self, event):
