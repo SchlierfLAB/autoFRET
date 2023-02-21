@@ -690,7 +690,7 @@ def par_burst(eval_folder, suffix, Brd_GGR, Brd_RR, threIT, threIT2, minPhs, IRF
               minR0, boolPostA, tauFRET, tauALEX, threads=-2):
 
 
-    start_multi_run = time.time()
+    #start_multi_run = time.time()
 
 
     Parallel(n_jobs=threads, prefer='processes')(delayed(burst_fun)(folder, eval_folder, suffix, Brd_GGR, Brd_RR, \
@@ -701,7 +701,7 @@ def par_burst(eval_folder, suffix, Brd_GGR, Brd_RR, threIT, threIT2, minPhs, IRF
                                                                    boolTotal, minGR, minR0, boolPostA, tauFRET, tauALEX)\
                                                 for folder in eval_folder.keys())
 
-    print(f'Multi thread run with {threads} threads took: ', time.time() - start_multi_run)
+    #print(f'Multi thread run with {threads} threads took: ', time.time() - start_multi_run)
 
 
 if __name__ == '__main__':

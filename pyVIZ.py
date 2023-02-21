@@ -1323,7 +1323,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             try:
                 self.calculationFunc(self.sliderVal)
                 self.leftGraph.canvas.ax.clear()
-                self.leftGraph.canvas.ax.bar(self.edges, self.hE, width=self.BinSize, color='grey')
+                self.leftGraph.canvas.ax.bar(self.edges, self.hE, width=self.BinSize, color='grey', align='edge')
                 self.leftGraph.canvas.ax.set_xlabel("E")
                 self.leftGraph.canvas.ax.set_ylabel("Counts")
                 self.leftGraph.canvas.ax.set_title(self.keys[self.sliderVal])
@@ -2433,11 +2433,18 @@ class MainWindow_single_well(QtWidgets.QMainWindow, Ui_MainWindow_Single_Well):
         # (self.leftTau <= self.Data_c["Tau"]) & (self.Data_c["Tau"] <= self.rightTau) &
         # (self.leftTau2 <= self.Data_c["Tau2"]) & (self.Data_c["Tau2"] <= self.rightTau2))
 
-        self.mask = ((float(self.settWin.leftSGSR.text()) < self.ratioSGSR) & (self.ratioSGSR < float(self.settWin.rightSGSR.text())) & (float(self.settWin.leftNGR.text()) < self.NGR) & (self.NGR < float(self.settWin.rightNGR.text()))  & (float(self.settWin.leftBr.text()) < self.Br) & (self.Br < float(self.settWin.rightBr.text()))
-                     & (float(self.settWin.leftN.text()) < self.N) & (self.N < float(self.settWin.rightN.text())) & (float(self.settWin.leftS.text()) < self.S) & (self.S < float(self.settWin.rightS.text())) & (float(self.settWin.leftE.text()) < self.E) & (self.E < float(self.settWin.rightE.text())) & (float(self.settWin.leftrGG.text()) < self.rGG) & (self.rGG < float(self.settWin.rightrGG.text()))
+        self.mask = ((float(self.settWin.leftSGSR.text()) < self.ratioSGSR)
+                     & (self.ratioSGSR < float(self.settWin.rightSGSR.text()))
+                     & (float(self.settWin.leftNGR.text()) < self.NGR)
+                     & (self.NGR < float(self.settWin.rightNGR.text()))
+                     & (float(self.settWin.leftBr.text()) < self.Br) & (self.Br < float(self.settWin.rightBr.text()))
+                     & (float(self.settWin.leftN.text()) < self.N) & (self.N < float(self.settWin.rightN.text()))
+                     & (float(self.settWin.leftS.text()) < self.S) & (self.S < float(self.settWin.rightS.text()))
+                     & (float(self.settWin.leftE.text()) < self.E) & (self.E < float(self.settWin.rightE.text()))
+                     & (float(self.settWin.leftrGG.text()) < self.rGG) & (self.rGG < float(self.settWin.rightrGG.text()))
                      & (float(self.settWin.leftrRR.text()) < self.rRR) & (self.rRR < float(self.settWin.rightrRR.text()))
-                     & (self.leftTau <= self.Data_c["Tau"]) & (self.Data_c["Tau"] <= self.rightTau) &
-                       (self.leftTau2 <= self.Data_c["Tau2"]) & (self.Data_c["Tau2"] <= self.rightTau2))
+                     & (self.leftTau <= self.Data_c["Tau"]) & (self.Data_c["Tau"] <= self.rightTau)
+                     & (self.leftTau2 <= self.Data_c["Tau2"]) & (self.Data_c["Tau2"] <= self.rightTau2))
 
 
         self.E = self.E[self.mask]
@@ -2493,7 +2500,7 @@ class MainWindow_single_well(QtWidgets.QMainWindow, Ui_MainWindow_Single_Well):
             try:
                 self.calculationFunc()
                 self.leftGraph.canvas.ax.clear()
-                self.leftGraph.canvas.ax.bar(self.edges, self.hE, width=self.BinSize)
+                self.leftGraph.canvas.ax.bar(self.edges, self.hE, width=self.BinSize, align='edge')
                 self.leftGraph.canvas.ax.set_xlabel("E")
                 self.leftGraph.canvas.ax.set_ylabel("Counts")
                 self.leftGraph.canvas.ax.set_title('Well')

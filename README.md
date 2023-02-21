@@ -1,5 +1,10 @@
 # Pybat and Tree
 
+For detailed information please read the following article: 
+
+Farewell to single well: An automated single-molecule FRET platform for multiwell-plate screening of biomolecular
+conformations and dynamics
+
 ## Installation
 
 ### Python packages 
@@ -12,6 +17,11 @@
 - Matplotlib
 - Joblib
 - Opencv
+
+#### Additional packages required for the scanning software
+
+- zaber-motion
+- pyserial
 
 ### Quick Setup
 For a quick setup make sure that ANACONDA is installed on your system. If not please visit https://anaconda.org and
@@ -28,9 +38,7 @@ Open the terminal and navigate to the project requirements directory. Afterwards
 the file corresponding to your OS):
 
 ```bash
-
 $ conda env create --name pyBatTreeENV --file enviroment.yml
-
 ```
 you can also change the name of the env. by changing "pyBatTreeENV" in the command above.
 
@@ -44,13 +52,14 @@ Now run the pyBat or pyTree file. For detailed information on the program refer 
 
 ### Performance 
 The performance is evaluated on a full 96 well measurement containing roughly 8GB of data.
+
 Systems: 
-- MacOS: MacBook pro with an M1 pro 4 core CPU and 16GB memory
-- Windows: Workstation 1 with an Intel Xeon E3-1270 4 core CPU and 32GB memory
-- Windows: Workstation 2 with an Intel i7-8700k 6 core CPU and 32GB memory
+- MacOS: MacBook pro with an M1 pro 8 core CPU and 16GB memory (no SMT)
+- Windows: Workstation 1 with an Intel Xeon E3-1270 4 core CPU and 32GB memory (SMT)
+- Windows: Workstation 2 with an Intel i7-8700k 6 core CPU and 32GB memory (SMT)
 
 | Tool                | MacBook pro | Windows Workstation 1 | Windows Workstation 2 |
 |---------------------|-------------|-----------------------|-----------------------|
-| Single Run          | 24 Hours    | -                     | -                     |
-| ParBat 7 processes  | 3 Hours     | 13 Hours              | -                     |
-| ParBat 11 processes | -           | -                     | 7.3 Hours             |  
+| pyBAT 1 process     | 24 Hours    | -                     | -                     |
+| pyBAT 7 processes  | 3 Hours     | 13 Hours              | -                     |
+| pyBAT 11 processes | -           | -                     | 7.3 Hours             |  

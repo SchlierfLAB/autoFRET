@@ -367,7 +367,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
 
             self.newIRF_G = self.IRF_G[self.Brd_GGR[0]-1:self.Brd_GGR[1]]
-
             self.newIRF_G_II = self.IRF_G_II[self.Brd_GGR[0] - 1:self.Brd_GGR[1]]
             self.newIRF_G_T = self.IRF_G_T[self.Brd_GGR[0] - 1:self.Brd_GGR[1]]
 
@@ -672,12 +671,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                   self.boolTotal, self.minGR, self.minR0, self.boolPostA, self.tauFRET, self.tauALEX, workers)
 
 
-        print(f'Took {time.time()-start} seconds for analyzing the Files')
-        try:
-            file_object = open('/Users/philipp/Desktop/Work/WHK Schlierf Group/smFRET_Software/speed_tests/times.txt', 'a')
-            file_object.write(f'Time for ParBat run: {time.time()-start}')
-        except:
-            pass
+        print(f'\nTook {time.time()-start} seconds to analyze')
+
     def IPTButtonEvent(self):
         # event after IPT button pressed
         # --> Placeholder backend
