@@ -1,4 +1,4 @@
-# Pybat and Tree
+# pyBAT and pyVIZ
 
 For detailed information please read the following article: 
 
