@@ -1,9 +1,9 @@
-# Pybat and Tree
+# pyBAT and pyVIZ
 
 For detailed information please read the following article: 
 
 Farewell to single well: An automated single-molecule FRET platform for multiwell-plate screening of biomolecular
-conformations and dynamics
+conformations and dynamics (doi: https://doi.org/10.1101/2023.02.28.530427)
 
 ## Installation
 

@@ -868,7 +868,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
             '''cs = self.rightGraph.canvas.ax.contourf(self.edges, self.keys, self.hE_np.T,
                                                     locator=ticker.MaxNLocator(), cmap="jet")'''
-            cs = self.rightGraph.canvas.ax.contourf(self.edges, self.keys, self.hE_np.T,
+            cs = self.rightGraph.canvas.ax.contourf(self.edges + self.BinSize, self.keys, self.hE_np.T,
                                                     levels=contour_levels, cmap="jet")
 
 
@@ -884,7 +884,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         elif self.rightComboBox.currentIndex() == 1:
             self.rightGraph.canvas.ax.clear()
-            self.rightGraph.canvas.ax.contourf(self.edges, self.keys, self.hS_np.T, levels=contour_levels,
+            self.rightGraph.canvas.ax.contourf(self.edges + self.BinSize, self.keys, self.hS_np.T, levels=contour_levels,
                                                cmap="jet")
             # self.rightGraph.canvas.ax.plot([-0.1+self.BinOffset,1.1+self.BinOffset], [self.sliderVal,self.sliderVal])
             self.rightGraph.canvas.ax.yaxis.set_major_locator(ticker.MaxNLocator())

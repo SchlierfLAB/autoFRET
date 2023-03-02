@@ -1,6 +1,0 @@
-<RCC>
-  <qresource prefix="96wellPlate">
-    <file>96.jpg</file>
-    <file>96-well plate.svg</file>
-  </qresource>
-</RCC>
