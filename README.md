@@ -5,6 +5,8 @@ For detailed information please read the following article:
 Farewell to single well: An automated single-molecule FRET platform for multiwell-plate screening of biomolecular
 conformations and dynamics (doi: https://doi.org/10.1101/2023.02.28.530427)
 
+Sample data can be found at: http://dx.doi.org/10.25532/OPARA-202
+
 ## Installation
 
 ### Python packages 
