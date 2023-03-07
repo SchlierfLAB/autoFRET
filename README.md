@@ -37,7 +37,7 @@ and might not work on all systems. If the installation fails please follow the n
 the required python libraries. 
 
 Open the terminal and navigate to the project requirements directory. Afterwards run the following command (select
-the file corresponding to your OS):
+the file corresponding e.g. pyBATVIZ_ENV.yml):
 
 ```bash
 $ conda env create --name pyBATVIZ_ENV --file enviroment.yml
