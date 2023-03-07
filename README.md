@@ -40,7 +40,7 @@ Open the terminal and navigate to the project requirements directory. Afterwards
 the file corresponding to your OS):
 
 ```bash
-$ conda env create --name pyBatTreeENV --file enviroment.yml
+$ conda env create --name pyBATVIZ_ENV --file enviroment.yml
 ```
 you can also change the name of the env. by changing "pyBatTreeENV" in the command above.
 

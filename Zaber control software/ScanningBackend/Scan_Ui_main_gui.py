@@ -7,8 +7,8 @@
 # WARNING! All changes made in this file will be lost!
 
 from PyQt5 import QtCore, QtGui, QtWidgets
-from customgraphicsview import CustomGraphicsView
-import resource_test_rc
+from ScanningBackend.customgraphicsview import CustomGraphicsView
+import ScanningBackend.resource_test_rc
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
