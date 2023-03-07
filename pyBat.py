@@ -128,6 +128,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         except AttributeError:
             return
 
+        self.data_dir = os.path.dirname(os.path.dirname(file_dict['HT3']))
+
         # check for empty
         if all(file_dict.values()):
             # if three files are selected
@@ -175,9 +177,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         # get non neg. len for plotting axis
         #top plot
-        self.Det2_4_Xaxis = np.max([len(self.hGII[self.hGII > 0]), len(self.hGT[self.hGT > 0])])
+        Det2_4_Xaxis = np.max([len(self.hGII[self.hGII > 0]), len(self.hGT[self.hGT > 0])])
         #middle plot
-        self.Det1_2_Xaxis = np.max([len(self.hRII[self.hRII > 0]), len(self.hRT[self.hRT > 0])])
+        Det1_3_Xaxis = np.max([len(self.hRII[self.hRII > 0]), len(self.hRT[self.hRT > 0])])
+        #global lim
+        self.xlimit = np.max([Det2_4_Xaxis, Det1_3_Xaxis])
 
 
         self.numCh=(1e12/self.repRate/self.dtBin)
@@ -285,7 +289,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.lifetime1_plot.canvas.ax.set_ylabel("Detector 2 & 4")
 
         # x axis lims
-        self.lifetime1_plot.canvas.ax.set_xlim((0, self.Det2_4_Xaxis))
+        self.lifetime1_plot.canvas.ax.set_xlim((0, self.xlimit))
 
         self.lifetime1_plot.canvas.fig.tight_layout()
         self.lifetime1_plot.canvas.draw()
@@ -301,10 +305,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.lifetime2_plot.canvas.ax.semilogy(self.edges2[np.where(self.normIRF_R > 0)],
                                                self.normIRF_R_plot, color='grey', linewidth=0.5)
         self.lifetime2_plot.canvas.ax.set_xlabel("Channels")
-        self.lifetime2_plot.canvas.ax.set_ylabel("Detector 1 & 2")
+        self.lifetime2_plot.canvas.ax.set_ylabel("Detector 1 & 3")
 
         # def x axis lim
-        self.lifetime2_plot.canvas.ax.set_xlim((0, self.Det1_2_Xaxis))
+        self.lifetime2_plot.canvas.ax.set_xlim((0, self.xlimit))
 
         self.lifetime2_plot.canvas.fig.tight_layout()
         self.lifetime2_plot.canvas.draw()
@@ -640,7 +644,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             # open a full 96 well folder
             # Open folder directory dialog to select the folder
             self.folder = QtWidgets.QFileDialog.getExistingDirectory(
-                self, "Select Directory")
+                self, "Select Directory", directory=self.data_dir)
 
             eval_folder = get_files(self.folder)
             meas_file_check = check_for_bdata_files(eval_folder, self.suffix)
@@ -925,6 +929,6 @@ if __name__ == '__main__':
     app.setApplicationDisplayName("pyBAT")
     app.setWindowIcon(QtGui.QIcon('requirements/batIcon.png'))
     w = MainWindow()
-    w.setWindowTitle('pyBAT')
+    w.setWindowTitle('pyBAT - Burst Analysis Tool')
     w.show()
     sys.exit(app.exec_())

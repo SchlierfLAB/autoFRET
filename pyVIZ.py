@@ -2844,7 +2844,7 @@ class controller:
 
         except: # if its the first time run the execution
             self.mainWin = MainWindow()
-            self.mainWin.setWindowTitle('pyVIZ Multi-Well Window')
+            self.mainWin.setWindowTitle('pyVIZ - Multiwell explorer')
             self.mainWin.switch_window.connect(self.show_single_well)
             try:
                 self.single_well_win.hide() # hide single well window if its currently open
@@ -2862,7 +2862,7 @@ class controller:
                 pass
         except: # if its the first time run the execution
             self.single_well_win = MainWindow_single_well()
-            self.single_well_win.setWindowTitle('pyVIZ Single-Well Window')
+            self.single_well_win.setWindowTitle('pyVIZ Single-Well explorer')
             self.single_well_win.switch_window.connect(self.show_main)
             try:
                 self.mainWin.hide() # hide multi well window if its currently open

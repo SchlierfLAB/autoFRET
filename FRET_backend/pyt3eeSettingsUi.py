@@ -437,7 +437,7 @@ class Ui_Settings(object):
         self.label_22.setText(_translate("Settings", "< NG/NR <"))
         self.rightSGSR.setText(_translate("Settings", "10"))
         self.rightFRET.setText(_translate("Settings", "1000"))
-        self.groupBox.setTitle(_translate("Settings", "GroupBox"))
+        self.groupBox.setTitle(_translate("Settings", ""))
         self.tauD0.setText(_translate("Settings", "3.8"))
         self.label_34.setText(_translate("Settings", "TauD(0)"))
         self.label_35.setText(_translate("Settings", "ns"))
