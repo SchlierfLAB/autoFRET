@@ -9,4 +9,4 @@ Sample data can be found at: http://dx.doi.org/10.25532/OPARA-202
 
 Detailed information about installation, usage and underlying algorithms of the software package please refer to the autoFRET Wiki: https://github.com/SchlierfLAB/autoFRET/wiki
 
-<img width="500" alt="image" src="https://user-images.githubusercontent.com/58071484/224969134-7bb64d26-30a7-4565-82e6-1e9878f76c8e.png">
+<img width="750" alt="image" src="https://user-images.githubusercontent.com/58071484/224969134-7bb64d26-30a7-4565-82e6-1e9878f76c8e.png">
