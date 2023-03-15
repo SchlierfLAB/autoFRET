@@ -388,7 +388,7 @@ class Ui_Settings(object):
         self.leftFRET.setText(_translate("Settings", "-1"))
         self.label_2.setText(_translate("Settings", "< FRET-2CDE <"))
         self.leftdT.setText(_translate("Settings", "-1"))
-        self.label_3.setText(_translate("Settings", "< |TGX - TRR| <"))
+        self.label_3.setText(_translate("Settings", "< |TDX - TAA| <"))
         self.rightdT.setText(_translate("Settings", "1000"))
         self.label_13.setText(_translate("Settings", "ms"))
         self.rightBr.setText(_translate("Settings", "5000"))
