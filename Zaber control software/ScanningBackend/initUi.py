@@ -40,3 +40,12 @@ class Ui_initDevices(object):
         _translate = QtCore.QCoreApplication.translate
         initDevices.setWindowTitle(_translate("initDevices", "Port selection"))
         self.findDevices.setText(_translate("initDevices", "Refresh devices"))
+
+if __name__ == '__main__':
+    import sys
+    app = QtWidgets.QApplication(sys.argv)
+    Settings = QtWidgets.QWidget()
+    ui = Ui_initDevices()
+    ui.setupUi(Settings)
+    Settings.show()
+    sys.exit(app.exec_())
