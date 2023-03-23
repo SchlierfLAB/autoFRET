@@ -33,7 +33,7 @@ On a common desktop computer, the data analysis of the example files should not 
 
 ### Instruction for use ###
 **pyMULTI.**
-Before using pyMULTI for the first time define the “Home” position by centering the objective in well A01 and press the “Set home position”. 
+Before using pyMULTI for the first time define the “Home” position by centering the objective in well A01 and press the “Set home position”.  
 **pyBAT.**
 The optimal value for IPT_Burst (burst identification) depends on the brightness of the dyes and the detection efficiency and is usually in the range of 0.005 and 0.03 ms. Note: Low IPT_Burst values discriminate dim FRET populations. The optimal value for IPT_BG (identification of background regions) depends on the frequency of bursts and is usually in the range of 0.005 and 0.03 ms. The IPT_BG should not be lower than IPT_Burst. The optimal value for Nph depends on the brightness of the dyes and the observation time in the confocal volume. Use "Raw Data" to inspect the intensity time trace and choose a Nph above the noise level (typically in the range of 30 and 200 Photons). Note: High Nph values discriminate fast diffusing molecules. The “Number of cores” used to analyze data is set by default to "Auto", where N-1 of the N available threads are used.
 
