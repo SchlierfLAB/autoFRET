@@ -108,9 +108,9 @@ class Ui_MainWindow(object):
         self.menuTools.addAction(self.actionImportSettings)
 
         # get settings window back
-        self.actionGetSettingsBack = QtWidgets.QAction(MainWindow)
-        self.actionGetSettingsBack.setObjectName('actionGetSettingsBack')
-        self.menuTools.addAction(self.actionGetSettingsBack)
+        #self.actionGetSettingsBack = QtWidgets.QAction(MainWindow)
+        #self.actionGetSettingsBack.setObjectName('actionGetSettingsBack')
+        #self.menuTools.addAction(self.actionGetSettingsBack)
 
         # switch to single view
         self.actionSwitchSingle = QtWidgets.QAction(MainWindow)
@@ -147,7 +147,7 @@ class Ui_MainWindow(object):
         #self.actionExtractRaw.setText(_translate("MainWindow", "Extract Raw Data"))
 
         self.actionImportSettings.setText(_translate("MainWindow", "Import Settings File"))
-        self.actionGetSettingsBack.setText(_translate("MainWindow", "Dock Settings Window"))
+        #self.actionGetSettingsBack.setText(_translate("MainWindow", "Dock Settings Window"))
         self.actionSwitchSingle.setText(_translate("MainWindow", "Switch to single Well"))
 
     # function to create user warnings

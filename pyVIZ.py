@@ -484,7 +484,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         #self.actionExtractRaw.triggered.connect(self.extractRawDataSlot)
 
         self.actionImportSettings.triggered.connect(self.ImportSettings)
-        self.actionGetSettingsBack.triggered.connect(self.get_settings_window)
+        #self.actionGetSettingsBack.triggered.connect(self.get_settings_window)
 
         self.actionSwitchSingle.triggered.connect(self.init_switch)
 
@@ -2029,7 +2029,7 @@ class MainWindow_single_well(QtWidgets.QMainWindow, Ui_MainWindow_Single_Well):
 
 
         self.actionImportSettings.triggered.connect(self.ImportSettings)
-        self.actionGetSettingsBack.triggered.connect(self.get_settings_window)
+        #self.actionGetSettingsBack.triggered.connect(self.get_settings_window)
 
         self.actionSwitchSingle.triggered.connect(self.init_switch)
 
@@ -2856,7 +2856,7 @@ class controller:
 
         except: # if its the first time run the execution
             self.mainWin = MainWindow()
-            self.mainWin.setWindowTitle('pyVIZ - Multiwell explorer')
+            self.mainWin.setWindowTitle('pyVIZ - Multiwell Explorer')
             self.mainWin.switch_window.connect(self.show_single_well)
             try:
                 self.single_well_win.hide() # hide single well window if its currently open
