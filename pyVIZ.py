@@ -268,7 +268,7 @@ class tickwindow_left_save(QDialog):
         self.grid.addWidget(self.left_eps_textbox,4,1)
         # hide till needed
         self.left_eps_textbox.hide()
-
+        self.ask_for_safe_file()
 
         self.listCheckBox[0].clicked.connect(self.ask_for_safe_file)
         self.listCheckBox[1].clicked.connect(self.ask_for_safe_file)
@@ -307,7 +307,7 @@ class tickwindow_left_save(QDialog):
         else:
             try:
                 self.settings_file_textbox.hide()
-                self.resize(150,100)
+                self.resize(300,100)
             except AttributeError:
                 # if no text box was opened before
                 return
@@ -1496,11 +1496,17 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                                         self.leftComboBox.currentText().replace(' ','_').replace('/','_')+'.csv')
                 #save current settings
                 try:
-                    settings_file = os.path.join(folder,self.Tickwindow_left.settings_file_textbox.text()+'.csv')
+                    if len(self.Tickwindow_left.settings_file_textbox.text()) == 0:
+                        settings_file = os.path.join(folder, str(self.keys[self.sliderVal]) + '_' +
+                                                     self.leftComboBox.currentText().replace(' ', '_').replace('/', '_')
+                                                     + '_settings_file.csv')
+                    else:
+                        settings_file = os.path.join(folder, self.Tickwindow_left.settings_file_textbox.text() + '.csv')
                 except NameError:
                     settings_file = os.path.join(folder, str(self.keys[self.sliderVal]) + '_' +
                                                  self.leftComboBox.currentText().replace(' ','_').replace('/','_')
                                                  + '_settings_file.csv')
+
 
                 #dict to frame convert for single line csv save
                 pd.DataFrame([self.setting_values_dict]).to_csv(settings_file, index=False)
@@ -1602,11 +1608,17 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
                 #save current settings
                 try:
-                    settings_file = os.path.join(folder,self.Tickwindow_left.settings_file_textbox.text()+'.csv')
+                    if len(self.Tickwindow_left.settings_file_textbox.text()) == 0:
+                        settings_file = os.path.join(folder, 'All_' +
+                                                     self.leftComboBox.currentText().replace(' ', '_').replace('/', '_')
+                                                     + '_settings_file.csv')
+                    else:
+                        settings_file = os.path.join(folder,self.Tickwindow_left.settings_file_textbox.text()+'.csv')
                 except NameError:
                     settings_file = os.path.join(folder, 'All_' +
                                                  self.leftComboBox.currentText().replace(' ','_').replace('/','_')
                                                  + '_settings_file.csv')
+
                 #dict to frame convert for single line csv save
                 pd.DataFrame([self.setting_values_dict]).to_csv(settings_file, index=False)
 
