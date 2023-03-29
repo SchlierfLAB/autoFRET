@@ -1,0 +1,14 @@
+{
+  "name": "autoFRET",
+  "version": "1.0.0",
+  "description": "TThe autoFRET Python software package consists of three individual applications for hardware control of single- or multiwell measurements (pyMULTI), single-molecule data analysis of raw data (pyBAT_otf/pyBAT), and inspection of analysis results (pyVIZ).",
+  "homepage": "https://github.com/SchlierfLAB/autoFRET",
+  "author": "Schlierf Group Tu Dresden <michael.schlierf@tu-dresden.de> (https://tu-dresden.de/cmcb/bcube/forschungsgruppen/schlierf)",
+  "contributors": [
+    "Andreas Hartmann <andreas.hartmann2@tu-dresden.de>",
+    "Philipp Schake <philipp.schake@tu-dresden.de>",
+    "Michael Schlierf <michael.schlierf@tu-dresden.de>"
+  ],
+  "repository": "SchlierfLAB/autoFRET",
+  "license": "GNU"
+  }
