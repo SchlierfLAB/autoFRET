@@ -208,7 +208,7 @@ class Ui_MainWindow(object):
         grid.addWidget(ChannelText, 2, 3)
 
         self.NormButton = QtWidgets.QPushButton()
-        self.NormButton.setText('Normalize View')
+        self.NormButton.setText('Correct')
         self.NormButton.setDisabled(True)
         grid.addWidget(self.NormButton, 3, 0, 1, 4)
 
@@ -238,19 +238,19 @@ class Ui_MainWindow(object):
             font_style = 'Arial'
 
         # Create the widgets
-        max_inter_time_line = QLabel("max. ITP<sub>Burst")
+        max_inter_time_line = QLabel("max. IPT<sub>Burst")
         max_inter_time_line.setFont(QFont(font_style, font_size))
         self.maxInterTime = QLineEdit()
-        self.maxInterTime.setText('0.15')
+        self.maxInterTime.setText('0.03')
         self.maxInterTime.setValidator(QDoubleValidator())
         self.maxInterTime.setMaximumWidth(40)
         self.maxInterTime.setMinimumWidth(40)
 
-        min_inter_t_noise = QLabel("min. ITP<sub>BG")
+        min_inter_t_noise = QLabel("min. IPT<sub>BG")
         min_inter_t_noise.setFont(QFont(font_style, font_size))
         self.minInterTimeNoise = QLineEdit()
         self.minInterTimeNoise.setValidator(QDoubleValidator())
-        self.minInterTimeNoise.setText('0.15')
+        self.minInterTimeNoise.setText('0.03')
         self.minInterTimeNoise.setMaximumWidth(40)
 
         self.minTotalTick = QCheckBox()
