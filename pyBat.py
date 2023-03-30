@@ -352,6 +352,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def GG_GR_Slot(self):
 
+        # reset
+
+        self.Brd_GGR = []
         # change cursor style
         self.lifetime1_plot.setCursor(QtCore.Qt.CrossCursor)
 
@@ -359,6 +362,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
 
     def get_Brd_GGR(self, event):
+
 
         self.Brd_GGR.append(round(event.xdata))
 
@@ -379,12 +383,17 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             # if two selected reset cursor style
             self.lifetime1_plot.setCursor(QtCore.Qt.ArrowCursor)
 
+            print(self.Brd_GGR)
+            return
+
 
         elif len(self.Brd_GGR) == 1:
             pass
 
         else:
             print('Condition in GG + GR not fullfilled:\nlen(self.Brd_GGR) != 2')
+
+
 
 
     def RR_Slot(self):
@@ -748,6 +757,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.settings_dict['postAnaCheckbox'] = self.boolPostA
         self.settings_dict['minTotalTick'] = self.boolTotal
         self.settings_dict['thirtythirtyCheck'] = self.thirty_thirty
+
+        #Todo: Add the user selected channels R & G to the settings file
+        # --> Also make sure that they will be executed when setting file gets imported
 
 
 
