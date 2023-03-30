@@ -1,4 +1,4 @@
-## autoFRET - pyMULTI, pyBAT and pyVIZ
+## autoFRET - pyMULTI, pyBAT and pyVIZ V 1.0.0
 
 For information about possible applications and performance of autoFRET please read the following article: 
 
