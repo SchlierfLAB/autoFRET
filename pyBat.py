@@ -8,6 +8,7 @@ from FRET_backend.BatOverriteFilesDialog import ask_override_files
 
 # Basic imports
 import sys
+import ast
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -334,14 +335,15 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.plot_lifetime2()
         self.plot_interPht()
 
+
         # If refresh after first init it is still drawn
-        if self.Brd_GGR:
-            self.lifetime1_plot.canvas.ax.axvspan(self.Brd_GGR[0], self.Brd_GGR[1], facecolor='green', alpha=0.4)
-            self.lifetime2_plot.canvas.ax.axvspan(self.Brd_GGR[0], self.Brd_GGR[1], facecolor='green', alpha=0.4)
+        if len(self.Brd_GGR) == 2:
+            self.green_span_top = self.lifetime1_plot.canvas.ax.axvspan(self.Brd_GGR[0], self.Brd_GGR[1], facecolor='green', alpha=0.4)
+            self.green_span_bottom = self.lifetime2_plot.canvas.ax.axvspan(self.Brd_GGR[0], self.Brd_GGR[1], facecolor='green', alpha=0.4)
             self.lifetime1_plot.canvas.draw()
             self.lifetime2_plot.canvas.draw()
-        if self.Brd_RR:
-            self.lifetime2_plot.canvas.ax.axvspan(self.Brd_RR[0], self.Brd_RR[1], facecolor='red', alpha=0.4)
+        if len(self.Brd_RR) == 2:
+            self.red_span = self.lifetime2_plot.canvas.ax.axvspan(self.Brd_RR[0], self.Brd_RR[1], facecolor='red', alpha=0.4)
             self.lifetime2_plot.canvas.draw()
             self.Filter()
             self.Show_Bursts()
@@ -353,8 +355,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def GG_GR_Slot(self):
 
         # reset
+        if len(self.Brd_GGR) == 2:
+            self.green_span_top.remove()
+            self.green_span_bottom.remove()
+            self.Brd_GGR = []
 
-        self.Brd_GGR = []
         # change cursor style
         self.lifetime1_plot.setCursor(QtCore.Qt.CrossCursor)
 
@@ -368,8 +373,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         # Brd_GGR are the selected x coordinates of the top plot
         if len(self.Brd_GGR) == 2:
-            self.lifetime1_plot.canvas.ax.axvspan(self.Brd_GGR[0], self.Brd_GGR[1], facecolor='green', alpha=0.4)
-            self.lifetime2_plot.canvas.ax.axvspan(self.Brd_GGR[0], self.Brd_GGR[1], facecolor='green', alpha=0.4)
+            self.green_span_top = self.lifetime1_plot.canvas.ax.axvspan(self.Brd_GGR[0], self.Brd_GGR[1], facecolor='green', alpha=0.4)
+            self.green_span_bottom = self.lifetime2_plot.canvas.ax.axvspan(self.Brd_GGR[0], self.Brd_GGR[1], facecolor='green', alpha=0.4)
             self.lifetime1_plot.canvas.draw()
             self.lifetime2_plot.canvas.draw()
 
@@ -383,7 +388,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             # if two selected reset cursor style
             self.lifetime1_plot.setCursor(QtCore.Qt.ArrowCursor)
 
-            print(self.Brd_GGR)
             return
 
 
@@ -397,6 +401,13 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
 
     def RR_Slot(self):
+
+        # reset
+        if len(self.Brd_RR) == 2:
+            self.red_span.remove()
+            self.Brd_RR = []
+
+
         # change cursor style
         self.lifetime2_plot.setCursor(QtCore.Qt.CrossCursor)
         self.cid = self.lifetime2_plot.canvas.mpl_connect("button_press_event", self.get_Brd_RR)
@@ -408,7 +419,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         if len(self.Brd_RR) == 2:
 
             self.lifetime2_plot.canvas.mpl_disconnect(self.cid)
-            self.lifetime2_plot.canvas.ax.axvspan(self.Brd_RR[0], self.Brd_RR[1], facecolor='red', alpha=0.4)
+            self.red_span = self.lifetime2_plot.canvas.ax.axvspan(self.Brd_RR[0], self.Brd_RR[1], facecolor='red', alpha=0.4)
             #self.lifetime1_plot.canvas.ax.axvspan(self.Brd_RR[0], self.Brd_RR[1], facecolor='red', alpha=0.4)
             self.lifetime2_plot.canvas.draw()
             self.lifetime1_plot.canvas.draw()
@@ -761,7 +772,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         #Todo: Add the user selected channels R & G to the settings file
         # --> Also make sure that they will be executed when setting file gets imported
 
-
+        self.settings_dict['Brd_GGR'] = self.Brd_GGR
+        self.settings_dict['Brd_RR'] = self.Brd_RR
 
 
     def export_settings(self):
@@ -802,7 +814,12 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             # change all the settings to values from the file
             for setting in settings_input.columns:
                 # if its not a bool its not a checkbox
-                if not isinstance(settings_input[setting].values[0], (np.bool_)):
+                if setting == 'Brd_GGR':
+                    self.Brd_GGR = ast.literal_eval(settings_input[setting][0])
+                elif setting == 'Brd_RR':
+                    self.Brd_RR = ast.literal_eval(settings_input[setting][0])
+
+                elif not isinstance(settings_input[setting].values[0], (np.bool_)):
                     getattr(self, f'{setting}') \
                         .setText(_translate("Settings", f"{str(settings_input[f'{setting}'].values[0])}"))
                 # if bool its a checkbox
