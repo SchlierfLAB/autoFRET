@@ -11,8 +11,11 @@ import pandas as pd
 from numpy import c_
 import scipy.io as sio
 from pathlib import Path
-from joblib import Parallel, delayed
+from joblib import Parallel, delayed, parallel
 from OnTheFlyBurst_Scripts.get_burst_input import get_input
+
+import contextlib
+
 
 import time
 from numba import jit, njit
@@ -24,6 +27,8 @@ warnings.filterwarnings("ignore")
 
 from tqdm import tqdm
 global bar_pos_lookup
+
+# Todo: Depractication warning --> The lookup will not be required for the latest version with a single progressbar
 
 bar_pos_lookup = {'A01': 1, 'A02': 2, 'A03': 3, 'A04': 4, 'A05': 5, 'A06': 6, 'A07': 7, 'A08': 8, 'A09': 9, 'A10': 10,
                   'A11': 11, 'A12': 12, 'B01': 13, 'B02': 14, 'B03': 15, 'B04': 16, 'B05': 17, 'B06': 18, 'B07': 19,
@@ -652,11 +657,11 @@ def burst_fun(folder, ht3_locations, suffix, Brd_GGR,Brd_RR, threIT,threITN, min
     #print(f'\nWorker on folder: {folder}\n')
 
 
-    ht3_file_fps = tqdm(ht3_locations[folder], position=bar_pos_lookup[folder], leave=True, dynamic_ncols=True)
-    ht3_file_fps.set_description(f'Folder: {folder}')
+    #ht3_file_fps = tqdm(ht3_locations[folder], position=bar_pos_lookup[folder], leave=True, dynamic_ncols=True)
+    #ht3_file_fps.set_description(f'Folder: {folder}')
 
 
-    for file in ht3_file_fps:
+    for file in ht3_locations[folder]:#ht3_file_fps:
 
         file = file.translate(str.maketrans({'/': '\\'}))
         fileName = file.split('\\')[-1]
@@ -714,7 +719,23 @@ def check_for_bdata_files(eval_folder, suffix):
 
     return False
 
+@contextlib.contextmanager
+def tqdm_joblib(tqdm_object):
+    # Source:
+    # https://stackoverflow.com/questions/24983493/tracking-progress-of-joblib-parallel-execution/58936697#58936697
+    """Context manager to patch joblib to report into tqdm progress bar given as argument"""
+    class TqdmBatchCompletionCallback(parallel.BatchCompletionCallBack):
+        def __call__(self, *args, **kwargs):
+            tqdm_object.update(n=self.batch_size)
+            return super().__call__(*args, **kwargs)
 
+    old_batch_callback = parallel.BatchCompletionCallBack
+    parallel.BatchCompletionCallBack = TqdmBatchCompletionCallback
+    try:
+        yield tqdm_object
+    finally:
+        parallel.BatchCompletionCallBack = old_batch_callback
+        tqdm_object.close()
 
 
 def par_burst(eval_folder, suffix, Brd_GGR, Brd_RR, threIT, threIT2, minPhs, IRF_G_II, IRF_G_T, meanIRFG_II,\
@@ -723,14 +744,14 @@ def par_burst(eval_folder, suffix, Brd_GGR, Brd_RR, threIT, threIT2, minPhs, IRF
 
 
     #start_multi_run = time.time()
-
-    Parallel(n_jobs=threads, prefer='processes')(delayed(burst_fun)(folder, eval_folder, suffix, Brd_GGR, Brd_RR, \
-                                                                   threIT, threIT2, minPhs, \
-                                                                   IRF_G_II, IRF_G_T, meanIRFG_II, meanIRFG_T, IRF_R_II,
-                                                                   IRF_R_T, meanIRFR_II,meanIRFR_T, \
-                                                                   dtBin, setLeeFilter, boolFLA, \
-                                                                   boolTotal, minGR, minR0, boolPostA, tauFRET, tauALEX, settings)\
-                                                for folder in eval_folder.keys())
+    with tqdm_joblib(tqdm(desc="Folders finished: ", total=len(eval_folder.keys()))) as progress_bar:
+        Parallel(n_jobs=threads, prefer='processes')(delayed(burst_fun)(folder, eval_folder, suffix, Brd_GGR, Brd_RR, \
+                                                                       threIT, threIT2, minPhs, \
+                                                                       IRF_G_II, IRF_G_T, meanIRFG_II, meanIRFG_T, IRF_R_II,
+                                                                       IRF_R_T, meanIRFR_II,meanIRFR_T, \
+                                                                       dtBin, setLeeFilter, boolFLA, \
+                                                                       boolTotal, minGR, minR0, boolPostA, tauFRET, tauALEX, settings)\
+                                                    for folder in eval_folder.keys())
 
     #print(f'Multi thread run with {threads} threads took: ', time.time() - start_multi_run)
 
