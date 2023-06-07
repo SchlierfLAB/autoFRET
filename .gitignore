@@ -16,3 +16,5 @@ FRET_backend/numba_getBurstAll.py
 FRET_backend/GetBurstAllMultiprocessing.py
 remove_test_files.py
 
+Test_Data/*
+Test_Data
