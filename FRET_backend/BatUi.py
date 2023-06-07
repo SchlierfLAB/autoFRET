@@ -122,6 +122,7 @@ class Ui_MainWindow(object):
 
         # create a settings box
         self.verticalLayout.addWidget(self.LifetimeBox(), stretch=1)
+        self.verticalLayout.addWidget(self.correction_box(), stretch=1)
         self.verticalLayout.addWidget(self.ShowBox(), stretch=1)
         self.verticalLayout.addWidget(self.settings_box(), stretch=3)
 
@@ -187,7 +188,7 @@ class Ui_MainWindow(object):
         self.AA_Button.setDisabled(True)
         grid.addWidget(self.AA_Button, 1, 0, 1, 4)
 
-        self.lower_Norm = QLineEdit()
+        '''self.lower_Norm = QLineEdit()
         self.lower_Norm.setText('1')
         self.lower_Norm.setDisabled(True)
         self.lower_Norm.setValidator(QIntValidator())
@@ -210,7 +211,7 @@ class Ui_MainWindow(object):
         self.NormButton = QtWidgets.QPushButton()
         self.NormButton.setText('Correct')
         self.NormButton.setDisabled(True)
-        grid.addWidget(self.NormButton, 3, 0, 1, 4)
+        grid.addWidget(self.NormButton, 3, 0, 1, 4)'''
 
 
 
@@ -220,6 +221,52 @@ class Ui_MainWindow(object):
 
         return groupBox
 
+    def correction_box(self):
+
+        groupBox = QGroupBox()
+        groupBox.setTitle('Background substracted view')
+        groupBox.setMaximumWidth(200)
+        grid = QGridLayout()
+
+        if platform.system() == 'Darwin':
+            font_size = 12
+            font_style = 'Arial'
+        elif platform.system() == 'Windows':
+            font_size = 8
+            font_style = 'Arial'
+        else:
+            # Todo: Test what setting is best on linux
+            font_size = 12
+            font_style = 'Arial'
+
+        self.lower_Norm = QLineEdit()
+        self.lower_Norm.setText('1')
+        self.lower_Norm.setDisabled(True)
+        self.lower_Norm.setValidator(QIntValidator())
+        grid.addWidget(self.lower_Norm, 0, 0)
+
+        ToText = QLabel('to')
+        ToText.setFont(QFont(font_style, font_size))
+        grid.addWidget(ToText, 0, 1, 1, 1)
+
+        self.upper_Norm = QLineEdit()
+        self.upper_Norm.setText('10')
+        self.upper_Norm.setValidator(QIntValidator())
+        self.upper_Norm.setDisabled(True)
+        grid.addWidget(self.upper_Norm, 0, 2)
+
+        ChannelText = QLabel('channels')
+        ChannelText.setFont(QFont(font_style, font_size))
+        grid.addWidget(ChannelText, 0, 3)
+
+        self.NormButton = QtWidgets.QPushButton()
+        self.NormButton.setText('Display')
+        self.NormButton.setDisabled(True)
+        grid.addWidget(self.NormButton, 1, 0, 1, 4)
+
+        groupBox.setLayout(grid)
+
+        return groupBox
 
     def settings_box(self):
 

@@ -380,7 +380,7 @@ class Ui_Settings(object):
     def retranslateUi(self, Settings):
         _translate = QtCore.QCoreApplication.translate
         Settings.setWindowTitle(_translate("Settings", "Form"))
-        self.Settings_2.setTitle(_translate("Settings", "Settings"))
+        self.Settings_2.setTitle(_translate("Settings", "Filter"))
         self.leftSGSR.setText(_translate("Settings", "-10"))
         self.label.setText(_translate("Settings", "< ALEX-2CDE <"))
         self.leftAlex.setText(_translate("Settings", "-1"))
@@ -393,7 +393,7 @@ class Ui_Settings(object):
         self.label_13.setText(_translate("Settings", "ms"))
         self.rightBr.setText(_translate("Settings", "5000"))
         self.label_14.setText(_translate("Settings", "kHz"))
-        self.label_4.setText(_translate("Settings", "< mol. Bright <"))
+        self.label_4.setText(_translate("Settings", "< mol. Bright. <"))
         self.leftBr.setText(_translate("Settings", "-1"))
         self.leftTau.setText(_translate("Settings", "-0.1"))
         self.label_7.setText(_translate("Settings", "< Tau_D(A) <"))

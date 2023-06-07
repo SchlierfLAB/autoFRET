@@ -7,15 +7,42 @@ from FRET_backend.burst_locator import burstLoc
 from FRET_backend.LifeMLE import LifeMLE
 
 import numpy as np
+import pandas as pd
 from numpy import c_
 import scipy.io as sio
 from pathlib import Path
-from joblib import Parallel, delayed
+from joblib import Parallel, delayed, parallel
 from OnTheFlyBurst_Scripts.get_burst_input import get_input
+
+import contextlib
+
 
 import time
 from numba import jit, njit
 import collections
+
+# Todo: Solve it dont ignore it --> This is explicitly for debugging
+import warnings
+warnings.filterwarnings("ignore")
+
+from tqdm import tqdm
+global bar_pos_lookup
+
+# Todo: Depractication warning --> The lookup will not be required for the latest version with a single progressbar
+
+bar_pos_lookup = {'A01': 1, 'A02': 2, 'A03': 3, 'A04': 4, 'A05': 5, 'A06': 6, 'A07': 7, 'A08': 8, 'A09': 9, 'A10': 10,
+                  'A11': 11, 'A12': 12, 'B01': 13, 'B02': 14, 'B03': 15, 'B04': 16, 'B05': 17, 'B06': 18, 'B07': 19,
+                  'B08': 20, 'B09': 21, 'B10': 22, 'B11': 23, 'B12': 24, 'C01': 25, 'C02': 26, 'C03': 27, 'C04': 28,
+                  'C05': 29, 'C06': 30, 'C07': 31, 'C08': 32, 'C09': 33, 'C10': 34, 'C11': 35, 'C12': 36, 'D01': 37,
+                  'D02': 38, 'D03': 39, 'D04': 40, 'D05': 41, 'D06': 42, 'D07': 43, 'D08': 44, 'D09': 45, 'D10': 46,
+                  'D11': 47, 'D12': 48, 'E01': 49, 'E02': 50, 'E03': 51, 'E04': 52, 'E05': 53, 'E06': 54, 'E07': 55,
+                  'E08': 56, 'E09': 57, 'E10': 58, 'E11': 59, 'E12': 60, 'F01': 61, 'F02': 62, 'F03': 63, 'F04': 64,
+                  'F05': 65, 'F06': 66, 'F07': 67, 'F08': 68, 'F09': 69, 'F10': 70, 'F11': 71, 'F12': 72, 'G01': 73,
+                  'G02': 74, 'G03': 75, 'G04': 76, 'G05': 77, 'G06': 78, 'G07': 79, 'G08': 80, 'G09': 81, 'G10': 82,
+                  'G11': 83, 'G12': 84, 'H01': 85, 'H02': 86, 'H03': 87, 'H04': 88, 'H05': 89, 'H06': 90, 'H07': 91,
+                  'H08': 92, 'H09': 93, 'H10': 94, 'H11': 95, 'H12': 96}
+
+
 
 
 def get_files(folder):
@@ -580,7 +607,7 @@ def getBurstAll(filename, pathname, suffix, lastBN, roiRG, roiR0, threIT, threIT
 
         with Path(fileB).open('ab') as f:
             np.save(f, BurstData, allow_pickle=True)
-            print(f'Saved to: {fileB}')
+            #print(f'Saved to: {fileB}')
 
 
 
@@ -602,7 +629,7 @@ def getBurstAll(filename, pathname, suffix, lastBN, roiRG, roiR0, threIT, threIT
 
 def burst_fun(folder, ht3_locations, suffix, Brd_GGR,Brd_RR, threIT,threITN, minPhs, newIRF_G_II, newIRF_G_T, meanIRFG_II, meanIRFG_T,\
               newIRF_R_II, newIRF_R_T,  meanIRFR_II, meanIRFR_T, dtBin, setLeeFilter, boolFLA,boolTotal ,minGR ,minR0, \
-              boolPostA, tauFRET, tauALEX):
+              boolPostA, tauFRET, tauALEX, settingsDict):
 
     checkInner = np.array([0])
     arrData = []
@@ -622,10 +649,19 @@ def burst_fun(folder, ht3_locations, suffix, Brd_GGR,Brd_RR, threIT,threITN, min
     str_pathdN = folder_path + '/backHIST.npy'
     np.save(str_pathdN, dataN)
 
-    lastBN = 0
-    print(f'\nWorker on folder: {folder}\n')
+    # Save settings in each folder
+    settings_path = folder_path + f'/settings_{suffix}.csv'
+    pd.DataFrame([settingsDict]).to_csv(settings_path, index=False)
 
-    for file in ht3_locations[folder]:
+    lastBN = 0
+    #print(f'\nWorker on folder: {folder}\n')
+
+
+    #ht3_file_fps = tqdm(ht3_locations[folder], position=bar_pos_lookup[folder], leave=True, dynamic_ncols=True)
+    #ht3_file_fps.set_description(f'Folder: {folder}')
+
+
+    for file in ht3_locations[folder]:#ht3_file_fps:
 
         file = file.translate(str.maketrans({'/': '\\'}))
         fileName = file.split('\\')[-1]
@@ -637,6 +673,7 @@ def burst_fun(folder, ht3_locations, suffix, Brd_GGR,Brd_RR, threIT,threITN, min
                                 boolFLA, boolTotal,minGR,minR0, boolPostA, checkInner, tauFRET, tauALEX)
 
         lastBN += len(BurstData)
+        #ht3_file_fps.update()
 
 
 def get_files(folder):
@@ -682,24 +719,39 @@ def check_for_bdata_files(eval_folder, suffix):
 
     return False
 
+@contextlib.contextmanager
+def tqdm_joblib(tqdm_object):
+    # Source:
+    # https://stackoverflow.com/questions/24983493/tracking-progress-of-joblib-parallel-execution/58936697#58936697
+    """Context manager to patch joblib to report into tqdm progress bar given as argument"""
+    class TqdmBatchCompletionCallback(parallel.BatchCompletionCallBack):
+        def __call__(self, *args, **kwargs):
+            tqdm_object.update(n=self.batch_size)
+            return super().__call__(*args, **kwargs)
 
+    old_batch_callback = parallel.BatchCompletionCallBack
+    parallel.BatchCompletionCallBack = TqdmBatchCompletionCallback
+    try:
+        yield tqdm_object
+    finally:
+        parallel.BatchCompletionCallBack = old_batch_callback
+        tqdm_object.close()
 
 
 def par_burst(eval_folder, suffix, Brd_GGR, Brd_RR, threIT, threIT2, minPhs, IRF_G_II, IRF_G_T, meanIRFG_II,\
               meanIRFG_T, IRF_R_II, IRF_R_T, meanIRFR_II, meanIRFR_T, dtBin, setLeeFilter, boolFLA, boolTotal, minGR,\
-              minR0, boolPostA, tauFRET, tauALEX, threads=-2):
+              minR0, boolPostA, tauFRET, tauALEX, settings, threads=-2):
 
 
     #start_multi_run = time.time()
-
-
-    Parallel(n_jobs=threads, prefer='processes')(delayed(burst_fun)(folder, eval_folder, suffix, Brd_GGR, Brd_RR, \
-                                                                   threIT, threIT2, minPhs, \
-                                                                   IRF_G_II, IRF_G_T, meanIRFG_II, meanIRFG_T, IRF_R_II,
-                                                                   IRF_R_T, meanIRFR_II,meanIRFR_T, \
-                                                                   dtBin, setLeeFilter, boolFLA, \
-                                                                   boolTotal, minGR, minR0, boolPostA, tauFRET, tauALEX)\
-                                                for folder in eval_folder.keys())
+    with tqdm_joblib(tqdm(desc="Folders finished: ", total=len(eval_folder.keys()))) as progress_bar:
+        Parallel(n_jobs=threads, prefer='processes')(delayed(burst_fun)(folder, eval_folder, suffix, Brd_GGR, Brd_RR, \
+                                                                       threIT, threIT2, minPhs, \
+                                                                       IRF_G_II, IRF_G_T, meanIRFG_II, meanIRFG_T, IRF_R_II,
+                                                                       IRF_R_T, meanIRFR_II,meanIRFR_T, \
+                                                                       dtBin, setLeeFilter, boolFLA, \
+                                                                       boolTotal, minGR, minR0, boolPostA, tauFRET, tauALEX, settings)\
+                                                    for folder in eval_folder.keys())
 
     #print(f'Multi thread run with {threads} threads took: ', time.time() - start_multi_run)
 
