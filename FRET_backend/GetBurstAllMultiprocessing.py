@@ -273,6 +273,13 @@ def getBurstAll(filename, pathname, suffix, lastBN, roiRG, roiR0, threIT, threIT
     # keep just real data and seperate them in channels
     PhotonsSGR0 = Photons[(Photons[:,0]==1) | (Photons[:,0]==2) | (Photons[:,0]==3) | (Photons[:,0]==4), 0:3]
 
+    # Todo: Here binning of PhotonsSGR0 from start to stop with GUI set binning (default 1ms) -> Hist fun
+    # --> The result is called intensity trace
+    # filter bins for thresholds (minPHS, minGR, minR0) --> User decision what should be used
+    # minPHS for combined binning; minGR green + minRO red depending on user input (binary setting)
+    # return index for thresh full filled
+    #
+
 
     # inter-photon time
     interPhT = PhotonsSGR0[1:,2] - PhotonsSGR0[0:-1,2]
