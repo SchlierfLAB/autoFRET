@@ -51,7 +51,7 @@ def get_files(folder):
     try:
         for path, subdirs, files in os.walk(folder):
             for name in files:
-                if name.endswith('.ht3'):
+                if name.endswith('.ht3') or name.endswith('.ptu'):
                     try:
                         ht3_locations[name[0:3]] = ht3_locations[name[0:3]] + [os.path.join(path, name)]
                     except KeyError:
@@ -717,7 +717,7 @@ def get_files(folder):
     try:
         for path, subdirs, files in os.walk(folder):
             for name in files:
-                if name.endswith('.ht3'):
+                if name.endswith('.ht3') or name.endswith('.ptu'):
                     try:
                         ht3_locations[name[0:3]] = ht3_locations[name[0:3]] + [os.path.join(path, name)]
                     except KeyError:
