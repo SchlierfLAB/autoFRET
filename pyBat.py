@@ -1,5 +1,6 @@
 # Import GUI
 import os
+import pickle
 
 from FRET_backend.BatUi import Ui_MainWindow
 from FRET_backend.GetBurstAllMultiprocessing import par_burst, get_files, check_for_bdata_files
@@ -712,6 +713,13 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         # Simpler: Leads to a situation in which all parallel processes have to wait for a single one that works on a
         # very large file.
 
+        '''test_file = [eval_folder, self.suffix, self.Brd_GGR, self.Brd_RR, self.threIT, self.threITN, self.minPhs, self.newIRF_G_II, self.newIRF_G_T,
+                  meanIRFG_II, meanIRFG_T, self.newIRF_R_II, self.newIRF_R_T, meanIRFR_II, meanIRFR_T, self.dtBin, self.setLeeFilter, self.boolFLA,
+                  self.boolTotal, self.minGR, self.minR0, self.boolPostA, self.tauFRET, self.tauALEX, self.settings_dict, workers]
+
+        with open('/Users/philipp/Desktop/Work/WHK Schlierf Group/autoFRET_SchliefGroupGit/autoFRET/Test_Data/SampleBurstIn.pkl', 'wb') as f:
+            pickle.dump(test_file, f)
+        '''
         par_burst(eval_folder, self.suffix, self.Brd_GGR, self.Brd_RR, self.threIT, self.threITN, self.minPhs, self.newIRF_G_II, self.newIRF_G_T,
                   meanIRFG_II, meanIRFG_T, self.newIRF_R_II, self.newIRF_R_T, meanIRFR_II, meanIRFR_T, self.dtBin, self.setLeeFilter, self.boolFLA,
                   self.boolTotal, self.minGR, self.minR0, self.boolPostA, self.tauFRET, self.tauALEX, self.settings_dict, workers)

@@ -256,14 +256,18 @@ def third_loop(roiRG, roiR0, interPhT, bLengthLong, bStartLong, Bursts, PhotonsS
 
     return arrAlex_2CDE_, arrFRET_2CDE_, NG_, NGII_, NGT_, NR_, NRII_, NRT_, NR0_, NR0II_, NR0T_, TBurst_, TGR_, TR0_
 
-
-
-def getBurstAll(filename, pathname, suffix, lastBN, roiRG, roiR0, threIT, threIT2, minPhs, threAveT, newIRF_G_II,\
+def getBurstAllIntensity(filename, pathname, suffix, lastBN, roiRG, roiR0, threIT, threIT2, minPhs, threAveT, newIRF_G_II,\
                 newIRF_G_T, meanIRFG_II, meanIRFG_T, newIRF_R_II, newIRF_R_T, meanIRFR_II, meanIRFR_T, roiMLE_G,\
                 roiMLE_R, dtBin, setLeeFilter, boolFLA, boolTotal, minGR, minR0, boolPostA, checkInner, tauFRET, tauALEX):
 
+    import pickle
 
     Photons_Raw = read_ht3_raw(pathname + '/' + filename, False)
+
+    with open('/Users/philipp/Desktop/Work/WHK Schlierf Group/autoFRET_SchliefGroupGit/autoFRET/Test_Data/PhotonsRAW.pkl', 'wb') as f:
+        pickle.dump(Photons_Raw, f)
+
+
 
 
     Photons = Photons_Raw[(Photons_Raw[:,0] != 15) & ((Photons_Raw[:,1] >= roiRG[0]) & (Photons_Raw[:,1] <= roiRG[1]) |
@@ -278,7 +282,33 @@ def getBurstAll(filename, pathname, suffix, lastBN, roiRG, roiR0, threIT, threIT
     # filter bins for thresholds (minPHS, minGR, minR0) --> User decision what should be used
     # minPHS for combined binning; minGR green + minRO red depending on user input (binary setting)
     # return index for thresh full filled
-    #
+
+    with open('/Users/philipp/Desktop/Work/WHK Schlierf Group/autoFRET_SchliefGroupGit/autoFRET/Test_Data/PhotonsSGR0.pkl', 'wb') as f:
+        pickle.dump(PhotonsSGR0, f)
+    #print(PhotonsSGR0)
+
+
+def getBurstAll(filename, pathname, suffix, lastBN, roiRG, roiR0, threIT, threIT2, minPhs, threAveT, newIRF_G_II,\
+                newIRF_G_T, meanIRFG_II, meanIRFG_T, newIRF_R_II, newIRF_R_T, meanIRFR_II, meanIRFR_T, roiMLE_G,\
+                roiMLE_R, dtBin, setLeeFilter, boolFLA, boolTotal, minGR, minR0, boolPostA, checkInner, tauFRET, tauALEX):
+
+
+    Photons_Raw = read_ht3_raw(pathname + '/' + filename, False)
+
+
+
+    Photons = Photons_Raw[(Photons_Raw[:,0] != 15) & ((Photons_Raw[:,1] >= roiRG[0]) & (Photons_Raw[:,1] <= roiRG[1]) |
+                                                      ((Photons_Raw[:,1] >= roiR0[0]) & (Photons_Raw[:,1] <= roiR0[1])))]
+
+
+    # keep just real data and seperate them in channels
+    PhotonsSGR0 = Photons[(Photons[:,0]==1) | (Photons[:,0]==2) | (Photons[:,0]==3) | (Photons[:,0]==4), 0:3]
+
+    # Todo: Here binning of PhotonsSGR0 from start to stop with GUI set binning (default 1ms) -> Hist fun
+    # --> The result is called intensity trace
+    # filter bins for thresholds (minPHS, minGR, minR0) --> User decision what should be used
+    # minPHS for combined binning; minGR green + minRO red depending on user input (binary setting)
+    # return index for thresh full filled
 
 
     # inter-photon time
@@ -350,10 +380,10 @@ def getBurstAll(filename, pathname, suffix, lastBN, roiRG, roiR0, threIT, threIT
                            , edges)
 
             dataAll.item().get('photonHIST')[:,0] = dataAll.item().get('photonHIST')[:,0] + hAll
-            hAll,_ = histc(Photons_Raw[(Photons_Raw[:,0] != 15)
+            hAll, _ = histc(Photons_Raw[(Photons_Raw[:,0] != 15)
                                        & ((Photons_Raw[:,0] == 2) | (Photons_Raw[:,0]==4))
                                        & ((Photons_Raw[:,2] >= PhotonsSGR0[bStartLong[i],2])
-                                          & (Photons_Raw[:,2] <= PhotonsSGR0[bStartLong[i] + int(bLengthLong[i]), 2])),1]
+                                          & (Photons_Raw[:,2] <= PhotonsSGR0[bStartLong[i] + int(bLengthLong[i]), 2])), 1]
                            , edges)
             dataAll.item().get('photonHIST')[:,1] = dataAll.item().get('photonHIST')[:,1] + hAll
 
@@ -428,8 +458,6 @@ def getBurstAll(filename, pathname, suffix, lastBN, roiRG, roiR0, threIT, threIT
         # Save dataN
         np.save(strHIST, dataN)
 
-        # Todo: Decide on how to save the var(dataAll)
-
 
         if BackT:
 
@@ -488,10 +516,6 @@ def getBurstAll(filename, pathname, suffix, lastBN, roiRG, roiR0, threIT, threIT
         tauArrA_T = np.zeros(len(accBIndex))
 
         edges = np.arange(1, 4097)
-
-        # Alert alert: We are dealing with indexes here. accBIndex scales in python format from 0 to +inf
-        # while the first column in Bursts gives the positions in matlab format from 1 to +inf
-        # --> To get correct result one needs to cope that with a -1 or +1 operation
 
         accBursts = np.zeros([np.sum(np.isin(Bursts[:,0],accBIndex+1)),4])
         actIndex = 0
@@ -674,13 +698,14 @@ def burst_fun(folder, ht3_locations, suffix, Brd_GGR,Brd_RR, threIT,threITN, min
         fileName = file.split('\\')[-1]
         folderName = '/'.join(file.split('\\')[0:-1])
 
-        BurstData = getBurstAll(fileName, folderName,suffix, lastBN, Brd_GGR, Brd_RR, threIT,\
+        BurstData = getBurstAllIntensity(fileName, folderName,suffix, lastBN, Brd_GGR, Brd_RR, threIT,\
                                 threITN, minPhs, 10, newIRF_G_II, newIRF_G_T, meanIRFG_II, meanIRFG_T,\
                                 newIRF_R_II, newIRF_R_T, meanIRFR_II, meanIRFR_T, Brd_GGR, Brd_RR, dtBin,setLeeFilter,\
                                 boolFLA, boolTotal,minGR,minR0, boolPostA, checkInner, tauFRET, tauALEX)
 
         lastBN += len(BurstData)
         #ht3_file_fps.update()
+
 
 
 def get_files(folder):
@@ -764,16 +789,19 @@ def par_burst(eval_folder, suffix, Brd_GGR, Brd_RR, threIT, threIT2, minPhs, IRF
 
 
 if __name__ == '__main__':
+    import pickle
     test_folder_path = '/Users/philipp/Desktop/Work/WHK Schlierf Group/smFRET_Software/speed_tests' \
                        '/DeadLockMEas/DeadLockFull/E11'
 
+    with open('/Users/philipp/Desktop/Work/WHK Schlierf Group/autoFRET_SchliefGroupGit/autoFRET/Test_Data/SampleBurstIn.pkl', 'rb') as f:
+        sample_data = pickle.load(f)
 
-    threIT, threIT2, minPhs, threAveT, IRF_G, meanIRFG, IRF_R, meanIRFR, dtBin, setLeeFilter, boolFLA, \
-    boolTotal, minGR, minR0, boolPostA, checkInner = get_input()
 
-    threads = 1  # multiprocessing.cpu_count()  # often confused with cores
-
-    par_burst(test_folder_path, 'test', np.array([12,1387]), np.array([1687,1913]), threIT[0], threIT2[0], minPhs[0], IRF_G[0], meanIRFG[0], IRF_R[0], \
-              meanIRFR[0], dtBin[0], setLeeFilter[0][0], boolFLA[0], boolTotal[0], minGR[0], minR0[0], boolPostA[0], \
-              threads=-2)
+    par_burst(eval_folder=sample_data[0], suffix=sample_data[1], Brd_GGR=sample_data[2], Brd_RR=sample_data[3],
+              threIT=sample_data[4], threIT2=sample_data[5], minPhs=sample_data[6], IRF_G_II=sample_data[7],
+              IRF_G_T=sample_data[8], meanIRFG_II=sample_data[9], meanIRFG_T=sample_data[10], IRF_R_II=sample_data[11],
+              IRF_R_T=sample_data[12], meanIRFR_II=sample_data[13], meanIRFR_T=sample_data[14], dtBin=sample_data[15],
+              setLeeFilter=sample_data[16], boolFLA=sample_data[17], boolTotal=sample_data[18], minGR=sample_data[19],
+              minR0=sample_data[20], boolPostA=sample_data[21], tauFRET=sample_data[22], tauALEX=sample_data[23],
+              settings=sample_data[24], threads=1)
 

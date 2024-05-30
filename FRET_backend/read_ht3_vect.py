@@ -106,7 +106,7 @@ def count_true(array):
 
 if __name__ == '__main__':
 
-    inputfile = '/Users/philipp/Desktop/Work/WHK Schlierf Group/smFRET_Software/speed_tests/eval_folder/A02/A02_2.ht3'
+    inputfile = '/Users/philipp/Desktop/Work/WHK Schlierf Group/autoFRET_SchliefGroupGit/autoFRET/Read_PTU/PTU files/Between_droplets2.ptu'
     #edges2,hGII,hGT,hRII,hRT,interPhT, numCh, midCh = read_ht3(inputfile=inputfile)
     roiRG = [100,1250]
     roiRO = [1300,2500]
