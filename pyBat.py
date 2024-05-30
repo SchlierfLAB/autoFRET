@@ -7,6 +7,8 @@ from FRET_backend.GetBurstAllMultiprocessing import par_burst, get_files, check_
 from FRET_backend.BatFileDIalog import File_DD_Dialog
 from FRET_backend.BatOverriteFilesDialog import ask_override_files
 
+from FRET_backend.Read_PTU_Obj import Read_PTU
+
 # Basic imports
 import sys
 import ast
@@ -161,6 +163,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         ## Start Readout ##
 
         try:
+            file_instance = Read_PTU(self.ht3file)
+            file_instance.further_process()
+            self.Data = file_instance.all_out
             self.Data = read_ht3_raw(self.ht3file)
             self.RawData = self.Data['RawData']
             self.RawInt = self.Data['RawInt']

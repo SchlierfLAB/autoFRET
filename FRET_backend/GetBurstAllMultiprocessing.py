@@ -1,6 +1,7 @@
 import os.path
 
 from FRET_backend.read_ht3_vect import read_ht3_raw
+from FRET_backend.Read_PTU_Obj import Read_PTU
 from FRET_backend.lee_filter import leeFilter
 from FRET_backend.burst_locator import burstLoc
 
@@ -293,7 +294,10 @@ def getBurstAll(filename, pathname, suffix, lastBN, roiRG, roiR0, threIT, threIT
                 roiMLE_R, dtBin, setLeeFilter, boolFLA, boolTotal, minGR, minR0, boolPostA, checkInner, tauFRET, tauALEX):
 
 
-    Photons_Raw = read_ht3_raw(pathname + '/' + filename, False)
+
+    #Photons_Raw = read_ht3_raw(pathname + '/' + filename, False)
+    file_instance = Read_PTU(pathname + '/' + filename)
+    Photons_Raw = file_instance.RawData
 
 
 
@@ -698,7 +702,7 @@ def burst_fun(folder, ht3_locations, suffix, Brd_GGR,Brd_RR, threIT,threITN, min
         fileName = file.split('\\')[-1]
         folderName = '/'.join(file.split('\\')[0:-1])
 
-        BurstData = getBurstAllIntensity(fileName, folderName,suffix, lastBN, Brd_GGR, Brd_RR, threIT,\
+        BurstData = getBurstAll(fileName, folderName,suffix, lastBN, Brd_GGR, Brd_RR, threIT,\
                                 threITN, minPhs, 10, newIRF_G_II, newIRF_G_T, meanIRFG_II, meanIRFG_T,\
                                 newIRF_R_II, newIRF_R_T, meanIRFR_II, meanIRFR_T, Brd_GGR, Brd_RR, dtBin,setLeeFilter,\
                                 boolFLA, boolTotal,minGR,minR0, boolPostA, checkInner, tauFRET, tauALEX)

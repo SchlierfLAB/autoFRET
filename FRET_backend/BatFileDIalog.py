@@ -18,7 +18,7 @@ class File_DD_Dialog(QDialog):
 
         # build fields
         self.file1Widget = QLineEdit(self)
-        self.file1Widget.setPlaceholderText('Drag ht3 File')
+        self.file1Widget.setPlaceholderText('Drag ht3/ptu File')
         self.grid.addWidget(self.file1Widget,0,0)
 
         # build fields
@@ -65,7 +65,7 @@ class File_DD_Dialog(QDialog):
 
     def folder_button1_select(self):
         self.first_file = QtWidgets.QFileDialog.getOpenFileNames(
-            self, "Select File", "", "*.ht3")
+            self, "Select File", "", "Intput Files (*.ht3, *.ptu)")
         try: # if nothing selected the empty var wont have an index and the program will return (same below)
             self.file1Widget.setText(self.first_file[0][0])
         except IndexError:
