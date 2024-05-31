@@ -65,7 +65,7 @@ class File_DD_Dialog(QDialog):
 
     def folder_button1_select(self):
         self.first_file = QtWidgets.QFileDialog.getOpenFileNames(
-            self, "Select File", "", "Intput Files (*.ht3, *.ptu)")
+            self, "Select File", "", self.tr("(*.ht3 *.ptu)"))
         try: # if nothing selected the empty var wont have an index and the program will return (same below)
             self.file1Widget.setText(self.first_file[0][0])
         except IndexError:
