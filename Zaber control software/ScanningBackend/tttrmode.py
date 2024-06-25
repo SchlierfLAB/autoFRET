@@ -117,7 +117,7 @@ else:
 
 def closeDevices():
     for i in range(0, MAXDEVNUM):
-        hhlib.HH_CloseDevice(ct.c_int(i))
+        hhlxib.HH_CloseDevice(ct.c_int(i))
     # exit(0)
 
 def stoptttr():

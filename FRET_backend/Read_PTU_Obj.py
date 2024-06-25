@@ -8,6 +8,15 @@ import numpy as np
 class Read_PTU:
     def __init__(self, inputfilePath):
 
+        self.PTU = False
+        self.ht3 = False
+
+        # get file type
+        if inputfilePath.endswith('.ptu'):
+            self.PTU = True
+        elif inputfilePath.endswith('.ht3'):
+            self.ht3 = True
+
         # def output var
         self.RawData = list()
 
@@ -16,63 +25,85 @@ class Read_PTU:
 
         # check if ptu
         self.magic = self.inputfile.read(8).decode("utf-8").strip('\0')
-        if self.magic != "PQTTTR":
-            print("ERROR: Magic invalid, this is not a PTU file.")
+        if self.magic != "PQTTTR" and self.PTU:
+            print("ERROR: Magic invalid, this is not a PTU or HT3 (with header) file.")
             self.inputfile.close()
             exit(0)
 
 
 
-        # get version info
-        self.version = self.inputfile.read(8).decode("utf-8").strip('\0')
+        if self.PTU:
+            # get version info
+            self.version = self.inputfile.read(8).decode("utf-8").strip('\0')
 
 
-        # Def some consts
-        self.oflcorrection = 0
-        self.dlen = 0
+            # Def some consts
+            self.oflcorrection = 0
+            self.dlen = 0
 
-        #Todo: Check for errors or if we can get that from header stuff as well
-        # Pico seems to handle that differently depending on file formats and header info
-        self.SyncRate = 25000000
-        self.syncperiod = 1E9 / self.SyncRate
+            #Todo: Check for errors or if we can get that from header stuff as well
+            # Pico seems to handle that differently depending on file formats and header info
+            self.SyncRate = 25000000
+            self.syncperiod = 1E9 / self.SyncRate
 
 
-        # Tag Types
-        self.tyEmpty8 = struct.unpack(">i", bytes.fromhex("FFFF0008"))[0]
-        self.tyBool8 = struct.unpack(">i", bytes.fromhex("00000008"))[0]
-        self.tyInt8 = struct.unpack(">i", bytes.fromhex("10000008"))[0]
-        self.tyBitSet64 = struct.unpack(">i", bytes.fromhex("11000008"))[0]
-        self.tyColor8 = struct.unpack(">i", bytes.fromhex("12000008"))[0]
-        self.tyFloat8 = struct.unpack(">i", bytes.fromhex("20000008"))[0]
-        self.tyTDateTime = struct.unpack(">i", bytes.fromhex("21000008"))[0]
-        self.tyFloat8Array = struct.unpack(">i", bytes.fromhex("2001FFFF"))[0]
-        self.tyAnsiString = struct.unpack(">i", bytes.fromhex("4001FFFF"))[0]
-        self.tyWideString = struct.unpack(">i", bytes.fromhex("4002FFFF"))[0]
-        self. tyBinaryBlob = struct.unpack(">i", bytes.fromhex("FFFFFFFF"))[0]
+            # Tag Types
+            self.tyEmpty8 = struct.unpack(">i", bytes.fromhex("FFFF0008"))[0]
+            self.tyBool8 = struct.unpack(">i", bytes.fromhex("00000008"))[0]
+            self.tyInt8 = struct.unpack(">i", bytes.fromhex("10000008"))[0]
+            self.tyBitSet64 = struct.unpack(">i", bytes.fromhex("11000008"))[0]
+            self.tyColor8 = struct.unpack(">i", bytes.fromhex("12000008"))[0]
+            self.tyFloat8 = struct.unpack(">i", bytes.fromhex("20000008"))[0]
+            self.tyTDateTime = struct.unpack(">i", bytes.fromhex("21000008"))[0]
+            self.tyFloat8Array = struct.unpack(">i", bytes.fromhex("2001FFFF"))[0]
+            self.tyAnsiString = struct.unpack(">i", bytes.fromhex("4001FFFF"))[0]
+            self.tyWideString = struct.unpack(">i", bytes.fromhex("4002FFFF"))[0]
+            self. tyBinaryBlob = struct.unpack(">i", bytes.fromhex("FFFFFFFF"))[0]
 
-        # Record types
-        self.rtPicoHarp300T3 = struct.unpack(">i", bytes.fromhex('00010303'))[0]
-        self.rtPicoHarp300T2 = struct.unpack(">i", bytes.fromhex('00010203'))[0]
-        self.rtHydraHarpT3 = struct.unpack(">i", bytes.fromhex('00010304'))[0]
-        self.rtHydraHarpT2 = struct.unpack(">i", bytes.fromhex('00010204'))[0]
-        self.rtHydraHarp2T3 = struct.unpack(">i", bytes.fromhex('01010304'))[0]
-        self.rtHydraHarp2T2 = struct.unpack(">i", bytes.fromhex('01010204'))[0]
-        self.rtTimeHarp260NT3 = struct.unpack(">i", bytes.fromhex('00010305'))[0]
-        self.rtTimeHarp260NT2 = struct.unpack(">i", bytes.fromhex('00010205'))[0]
-        self.rtTimeHarp260PT3 = struct.unpack(">i", bytes.fromhex('00010306'))[0]
-        self.rtTimeHarp260PT2 = struct.unpack(">i", bytes.fromhex('00010206'))[0]
-        self.rtGenericT3 = struct.unpack(">i", bytes.fromhex('00010307'))[0]  # MultiHarpXXX and PicoHarp330
-        self.rtGenericT2 = struct.unpack(">i", bytes.fromhex('00010207'))[0]  # MultiHarpXXX and PicoHarp330
+            # Record types
+            self.rtPicoHarp300T3 = struct.unpack(">i", bytes.fromhex('00010303'))[0]
+            self.rtPicoHarp300T2 = struct.unpack(">i", bytes.fromhex('00010203'))[0]
+            self.rtHydraHarpT3 = struct.unpack(">i", bytes.fromhex('00010304'))[0]
+            self.rtHydraHarpT2 = struct.unpack(">i", bytes.fromhex('00010204'))[0]
+            self.rtHydraHarp2T3 = struct.unpack(">i", bytes.fromhex('01010304'))[0]
+            self.rtHydraHarp2T2 = struct.unpack(">i", bytes.fromhex('01010204'))[0]
+            self.rtTimeHarp260NT3 = struct.unpack(">i", bytes.fromhex('00010305'))[0]
+            self.rtTimeHarp260NT2 = struct.unpack(">i", bytes.fromhex('00010205'))[0]
+            self.rtTimeHarp260PT3 = struct.unpack(">i", bytes.fromhex('00010306'))[0]
+            self.rtTimeHarp260PT2 = struct.unpack(">i", bytes.fromhex('00010206'))[0]
+            self.rtGenericT3 = struct.unpack(">i", bytes.fromhex('00010307'))[0]  # MultiHarpXXX and PicoHarp330
+            self.rtGenericT2 = struct.unpack(">i", bytes.fromhex('00010207'))[0]  # MultiHarpXXX and PicoHarp330
 
-        # get header information
+            # get header information
 
-        self.read_PTU_Header()
+            self.read_PTU_Header()
 
-        # get important variables from headers
-        self.numRecords = self.tagValues[self.tagNames.index("TTResult_NumberOfRecords")]
-        self.globRes = self.tagValues[self.tagNames.index("MeasDesc_GlobalResolution")]
+            # get important variables from headers
+            self.numRecords = self.tagValues[self.tagNames.index("TTResult_NumberOfRecords")]
+            self.globRes = self.tagValues[self.tagNames.index("MeasDesc_GlobalResolution")]
 
-        self.detect_extract()
+            self.detect_extract()
+
+        elif self.ht3:
+
+            # decide if file has a header or not
+            try:
+                input_file = open(inputfilePath, 'rb')
+                input_file.read(16).decode("utf-8").strip('\0')
+                header = True
+                input_file.close()
+            except UnicodeError:
+                header = False
+
+            if header:
+                from FRET_backend.ReadHT3HeaderFiles import read_ht3_header
+                self.all_out = read_ht3_header(inputfilePath, True)
+                self.RawData = self.all_out['RawData']
+            else:
+                from FRET_backend.read_ht3_vect import read_ht3_raw
+                self.all_out = read_ht3_raw(inputfilePath, True)
+                self.RawData = self.all_out['RawData']
+
 
 
     def read_PTU_Header(self):
@@ -333,19 +364,19 @@ class Read_PTU:
 
     def further_process(self):
 
+        if not self.ht3:
+            measT = np.floor((self.RawData[-1][2] - self.RawData[0][2]) * 1e-6)
+            edges = np.arange(0, measT, 1)
+            coarseMacro = np.floor(self.RawData[:, 2] * 1e-6)
+            RawInt = self.histc(coarseMacro, edges)
 
-        measT = np.floor((self.RawData[-1][2] - self.RawData[0][2]) * 1e-6)
-        edges = np.arange(0, measT, 1)
-        coarseMacro = np.floor(self.RawData[:, 2] * 1e-6)
-        RawInt = self.histc(coarseMacro, edges)
-
-        self.all_out = {'RawData':self.RawData, 'RawInt':RawInt, 'SyncRate':self.SyncRate, 'varout4':16}
+            self.all_out = {'RawData':self.RawData, 'RawInt':RawInt, 'SyncRate':self.SyncRate, 'varout4':16}
 
 
 
 if __name__ == '__main__':
     print('IN Main')
-    inputfile_path = '/Read_PTU/PTU files/Between_droplets1.ptu'
+    inputfile_path = '/Users/philipp/Desktop/Work/SchlierfData/HT3_With_Header/default_000.ht3'
 
     test_read = Read_PTU(inputfile_path)
 

@@ -24,6 +24,16 @@ def histc(Inp, bin):
 
 
 def read_ht3_raw(inputfile, all_out=True):
+    '''
+    Reads ht3 files without header
+    Args:
+        str inputfile: path to the ht3 file
+        bool all_out: If true not only Raw data is returned but a dictionary as:
+        {'RawData':RawData, 'RawInt':RawInt, 'SyncRate':SyncRate, 'varout4':16}
+
+    Returns: either Raw data Nx3 array or dictionary depending on all_out bool
+
+    '''
 
     global oflcorrection
     global version
@@ -106,8 +116,9 @@ def count_true(array):
 
 if __name__ == '__main__':
 
-    inputfile = '/Users/philipp/Desktop/Work/WHK Schlierf Group/autoFRET_SchliefGroupGit/autoFRET/Read_PTU/PTU files/Between_droplets2.ptu'
+    #inputfile = '/Users/philipp/Desktop/Work/WHK Schlierf Group/autoFRET_SchliefGroupGit/autoFRET/Read_PTU/PTU files/Between_droplets2.ptu'
     #edges2,hGII,hGT,hRII,hRT,interPhT, numCh, midCh = read_ht3(inputfile=inputfile)
+    inputfile = '/Users/philipp/Desktop/Work/SchlierfData/HT3_With_Header/default_000.ht3'
     roiRG = [100,1250]
     roiRO = [1300,2500]
     Photons_Raw = read_ht3_raw(inputfile, True)

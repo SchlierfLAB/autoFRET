@@ -213,7 +213,7 @@ class initDevices(QtWidgets.QMainWindow, Ui_initDevices):
 
 class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
-    def __init__(self,device,init_device,*args, obj=None, **kwargs):
+    def __init__(self, device, init_device,*args, obj=None, **kwargs):
         super(MainWindow, self).__init__(*args, **kwargs)
         self._init_device = init_device
         self.setupUi(self)

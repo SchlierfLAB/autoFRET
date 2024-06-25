@@ -55,7 +55,7 @@ def read_hhd(location):
         ##################################################################################
         
         
-    NumberOfCurves,  = struct.unpack('i', data.read(4))    
+    NumberOfCurves,  = struct.unpack('i', data.read(4))
     print('    Number of Curves: {}\n'.format(NumberOfCurves))    
         
     BitsPerRecord, = struct.unpack('i', data.read(4))    
@@ -458,7 +458,8 @@ def read_hhd(location):
     RHHD.append(BinRes)
 
     return RHHD
-
+if __name__ == '__main__':
+    read_hhd('/Users/philipp/Desktop/Work/SchlierfData/HT3_With_Header/default_000.ht3')
 
 
 
