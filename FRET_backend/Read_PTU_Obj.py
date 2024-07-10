@@ -25,11 +25,12 @@ class Read_PTU:
 
         # check if ptu
         self.magic = self.inputfile.read(8).decode("utf-8").strip('\0')
-        if self.magic != "PQTTTR" and self.PTU:
-            print("ERROR: Magic invalid, this is not a PTU or HT3 (with header) file.")
-            self.inputfile.close()
-            exit(0)
-
+        if self.magic == "PQTTTR":
+            self.PTU = True
+            # Can theoretically be a ht3 file but it is a Pico readable one
+            self.ht3 = False
+        elif self.magic != "PQTTTR" and self.PTU:
+            print('Cant read this file format, check header')
 
 
         if self.PTU:
@@ -88,10 +89,11 @@ class Read_PTU:
 
             # decide if file has a header or not
             try:
-                input_file = open(inputfilePath, 'rb')
-                input_file.read(16).decode("utf-8").strip('\0')
+                # reset pointer
+                self.inputfile.seek(0, 0)
+                self.inputfile.read(16).decode("utf-8").strip('\0')
                 header = True
-                input_file.close()
+                self.input_file.close()
             except UnicodeError:
                 header = False
 

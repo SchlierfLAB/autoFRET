@@ -203,7 +203,7 @@ class initDevices(QtWidgets.QMainWindow, Ui_initDevices):
         self.device = device_list[1]
 
         self.hide()
-        self.window2 = MainWindow(self.device ,self)
+        self.window2 = MainWindow(self.device, self)
         self.window2.setWindowTitle('Multi Well Measurement')
         self.window2.show()
             # ex = Example(device)
