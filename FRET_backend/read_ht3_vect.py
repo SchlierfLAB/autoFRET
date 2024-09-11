@@ -92,6 +92,17 @@ def read_ht3_raw(inputfile, all_out=True):
 
     RawData = np.array(RawData)
 
+    # Masks for each value that needs to be changed
+    mask_1 = RawData[:, 0] == 1.0
+    mask_2 = RawData[:, 0] == 2.0
+    mask_3 = RawData[:, 0] == 3.0
+    mask_4 = RawData[:, 0] == 4.0
+
+    RawData[mask_1, 0] = 2.0
+    RawData[mask_2, 0] = 1.0
+    RawData[mask_3, 0] = 4.0
+    RawData[mask_4, 0] = 3.0
+
     if all_out:
         measT = np.floor((RawData[-1][2]-RawData[0][2])*1e-6)
         edges = np.arange(0,measT,1)

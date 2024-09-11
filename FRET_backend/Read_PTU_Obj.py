@@ -93,7 +93,7 @@ class Read_PTU:
                 self.inputfile.seek(0, 0)
                 self.inputfile.read(16).decode("utf-8").strip('\0')
                 header = True
-                self.input_file.close()
+                self.inputfile.close()
             except UnicodeError:
                 header = False
 
@@ -202,12 +202,24 @@ class Read_PTU:
                 truensync = self.oflcorrection + nsync
                 #gotPhoton(truensync, channel, dtime)
                 truetime = truensync * self.syncperiod
-                self.RawData.append([channel+1, dtime, truetime])
+                self.RawData.append([channel + 1, dtime, truetime])
             if recNum % 100000 == 0:
                 sys.stdout.write("\rProgress: %.1f%%" % (float(recNum) * 100 / float(self.numRecords)))
                 sys.stdout.flush()
 
         self.RawData = np.array(self.RawData)
+
+
+        # Masks for each value that needs to be changed
+        mask_1 = self.RawData[:, 0] == 1.0
+        mask_2 = self.RawData[:, 0] == 2.0
+        mask_3 = self.RawData[:, 0] == 3.0
+        mask_4 = self.RawData[:, 0] == 4.0
+
+        self.RawData[mask_1, 0] = 2.0
+        self.RawData[mask_2, 0] = 1.0
+        self.RawData[mask_3, 0] = 4.0
+        self.RawData[mask_4, 0] = 3.0
 
     def readPT2(self):
 
@@ -248,6 +260,17 @@ class Read_PTU:
                 sys.stdout.flush()
 
         self.RawData = np.array(self.RawData)
+
+        # Masks for each value that needs to be changed
+        mask_1 = self.RawData[:, 0] == 1.0
+        mask_2 = self.RawData[:, 0] == 2.0
+        mask_3 = self.RawData[:, 0] == 3.0
+        mask_4 = self.RawData[:, 0] == 4.0
+
+        self.RawData[mask_1, 0] = 2.0
+        self.RawData[mask_2, 0] = 1.0
+        self.RawData[mask_3, 0] = 4.0
+        self.RawData[mask_4, 0] = 3.0
 
     def readPT3(self):
 
@@ -290,7 +313,19 @@ class Read_PTU:
                 sys.stdout.write("\rProgress: %.1f%%" % (float(recNum) * 100 / float(self.numRecords)))
                 sys.stdout.flush()
 
+
         self.RawData = np.array(self.RawData)
+
+        # Masks for each value that needs to be changed
+        mask_1 = self.RawData[:, 0] == 1.0
+        mask_2 = self.RawData[:, 0] == 2.0
+        mask_3 = self.RawData[:, 0] == 3.0
+        mask_4 = self.RawData[:, 0] == 4.0
+
+        self.RawData[mask_1, 0] = 2.0
+        self.RawData[mask_2, 0] = 1.0
+        self.RawData[mask_3, 0] = 4.0
+        self.RawData[mask_4, 0] = 3.0
 
 
     def histc(self, Inp, bin):
@@ -367,6 +402,8 @@ class Read_PTU:
     def further_process(self):
 
         if not self.ht3:
+
+
             measT = np.floor((self.RawData[-1][2] - self.RawData[0][2]) * 1e-6)
             edges = np.arange(0, measT, 1)
             coarseMacro = np.floor(self.RawData[:, 2] * 1e-6)
@@ -378,10 +415,13 @@ class Read_PTU:
 
 if __name__ == '__main__':
     print('IN Main')
-    inputfile_path = '/Users/philipp/Desktop/Work/SchlierfData/HT3_With_Header/default_000.ht3'
+    inputfile_path = '/Users/philipp/Desktop/Work/SchlierfData/MichaelsPTUs/A01/DNA_multi_set9_21_20240723-172213_1.ptu'
 
     test_read = Read_PTU(inputfile_path)
 
     RawData = test_read.RawData
 
     print('\n'*3, RawData)
+
+    subs = RawData[:100]
+
