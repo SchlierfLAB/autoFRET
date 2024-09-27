@@ -656,12 +656,11 @@ def getBurstAll(filename, pathname, suffix, lastBN, roiRG, roiR0, threIT, threIT
 
     return []
 
-def burst_fun(folder, ht3_locations, suffix, Brd_GGR,Brd_RR, threIT,threITN, minPhs, newIRF_G_II, newIRF_G_T, meanIRFG_II, meanIRFG_T,\
+def burst_fun(folder, ht3_locations, suffix, Brd_GGR, Brd_RR, threIT,threITN, minPhs, newIRF_G_II, newIRF_G_T, meanIRFG_II, meanIRFG_T,\
               newIRF_R_II, newIRF_R_T,  meanIRFR_II, meanIRFR_T, dtBin, setLeeFilter, boolFLA,boolTotal ,minGR ,minR0, \
               boolPostA, tauFRET, tauALEX, settingsDict):
 
     checkInner = np.array([0])
-    arrData = []
 
     # get folder dir from file dir --> Robust since if the file can be handeld the folder is also correct
     folder_path = '/'.join(ht3_locations[folder][0].translate(str.maketrans({'/': '\\'})).split('\\')[0:-1])
@@ -683,14 +682,8 @@ def burst_fun(folder, ht3_locations, suffix, Brd_GGR,Brd_RR, threIT,threITN, min
     pd.DataFrame([settingsDict]).to_csv(settings_path, index=False)
 
     lastBN = 0
-    #print(f'\nWorker on folder: {folder}\n')
 
-
-    #ht3_file_fps = tqdm(ht3_locations[folder], position=bar_pos_lookup[folder], leave=True, dynamic_ncols=True)
-    #ht3_file_fps.set_description(f'Folder: {folder}')
-
-
-    for file in ht3_locations[folder]:#ht3_file_fps:
+    for file in ht3_locations[folder]:
 
         file = file.translate(str.maketrans({'/': '\\'}))
         fileName = file.split('\\')[-1]
@@ -702,7 +695,7 @@ def burst_fun(folder, ht3_locations, suffix, Brd_GGR,Brd_RR, threIT,threITN, min
                                 boolFLA, boolTotal,minGR,minR0, boolPostA, checkInner, tauFRET, tauALEX)
 
         lastBN += len(BurstData)
-        #ht3_file_fps.update()
+
 
 
 
@@ -783,7 +776,7 @@ def par_burst(eval_folder, suffix, Brd_GGR, Brd_RR, threIT, threIT2, minPhs, IRF
                                                                        boolTotal, minGR, minR0, boolPostA, tauFRET, tauALEX, settings)\
                                                     for folder in eval_folder.keys())
 
-    #print(f'Multi thread run with {threads} threads took: ', time.time() - start_multi_run)
+
 
 
 if __name__ == '__main__':
