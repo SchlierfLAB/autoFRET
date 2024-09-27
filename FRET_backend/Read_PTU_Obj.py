@@ -24,7 +24,10 @@ class Read_PTU:
         self.inputfile = open(inputfilePath, 'rb')
 
         # check if ptu
-        self.magic = self.inputfile.read(8).decode("utf-8").strip('\0')
+        try:
+            self.magic = self.inputfile.read(8).decode("utf-8").strip('\0')
+        except:
+            self.magic = None
         if self.magic == "PQTTTR":
             self.PTU = True
             # Can theoretically be a ht3 file but it is a Pico readable one
