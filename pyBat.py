@@ -35,6 +35,13 @@ import multiprocessing
 
 class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def __init__(self, *args, **kwargs):
+        '''
+        Backend for the pyBAT tool
+        Args:
+            *args:
+            **kwargs:
+        '''
+
         super(MainWindow, self).__init__(*args, **kwargs)
 
         self.setupUi(self)
@@ -93,6 +100,13 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.Brd_RR = []
 
     def irf_shifts(self):
+
+        '''
+        Control over +/- buttons to shift the irfs. Will also refresh the lifetimes for every step
+        Returns:
+
+        '''
+
         sender = self.sender()
         if sender == self.PlusIRFButton_Top:
             self.normIRF_G_plot = np.roll(self.normIRF_G_plot, 1)
@@ -110,6 +124,12 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
 
     def tick_switch(self):
+        '''
+        Creates a switch for the listed tick boxes
+        Returns:
+
+        '''
+
         if self.minTotalTick.isChecked():
             self.grBox.setDisabled(True)
             self.r0Box.setDisabled(True)
@@ -118,7 +138,13 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.r0Box.setDisabled(False)
 
     def openFileSlot(self):
+        '''
+        Intitial file read in. Takes a single ht3 file to be displayed in the panels in order to adjust the
+        settings. Further HHD files are getting imported. Further Raw data gets analyzed / histograms are computed
+        to get first plots. Execution function gets triggered to initialize plots and first computes.
+        Returns:
 
+        '''
 
         ## Start file grabbing ##
 
@@ -227,6 +253,13 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
 
     def calculations(self):
+
+        '''
+        Normalizes the IRF's and splitts raw data into channels and parallel + perpendicular parts
+        Returns:
+
+        '''
+
         ## Mathemagic ##
         IRF_AllG = self.RHHD_G[0]
         self.IRF_G = IRF_AllG[1] + IRF_AllG[3]
@@ -282,6 +315,12 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def plot_lifetime1(self):
 
+        '''
+        Plots the lifetime for channels 2 & 4 (top panel)
+        Returns:
+
+        '''
+
         self.lifetime1_plot.canvas.ax.clear()
         self.lifetime1_plot.canvas.ax.semilogy(self.edges2, self.hGII, color='green',
                                                linewidth=0.5, nonpositive='clip')
@@ -303,6 +342,12 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def plot_lifetime2(self):
 
+        '''
+        Plots the lifetime for channels 1 & 3 (mid panel)
+        Returns:
+
+        '''
+
         self.lifetime2_plot.canvas.ax.clear()
         self.lifetime2_plot.canvas.ax.semilogy(self.edges2, self.hRII, color='red',
                                                linewidth=0.5, nonpositive='clip')
@@ -322,6 +367,12 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def plot_interPht(self):
 
+        '''
+        Plots the interphoton time (bottom panel)
+        Returns:
+
+        '''
+
         self.interPht_plot.canvas.ax.clear()
         self.interPht_plot.canvas.ax.plot(self.interPhT, linewidth=0.5)
         self.interPht_plot.canvas.ax.set_xlabel("$Photon_{i+1 -> i}$")
@@ -332,7 +383,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def init_execute(self):
         '''
         Executes initial calculations to get plotting variables -> Plots the data in the three slots
-        --> To be used after data readin
+        -> To be used after data readin
+        Afterwards several buttons in the interface are enabled
         '''
 
         self.get_current_settings()
@@ -377,7 +429,12 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
 
     def GG_GR_Slot(self):
+        '''
+        Triggers when DD + DA button in interface pressed. Checks if user trys to overwrite the current selection.
+        Changes cursor to cross within the plot. Triggers function to grap the interval after mouse press.
+        Returns:
 
+        '''
         # reset
         if len(self.Brd_GGR) == 2:
             self.green_span_top.remove()
@@ -391,7 +448,15 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
 
     def get_Brd_GGR(self, event):
+        '''
+                Gets tge x,y interval for channel 2 & 4 (Top plot), draws the span into the plot. Enables the AA
+                button and resets cursor.
+                Args:
+                    event: Klick event
 
+                Returns:
+
+        '''
 
         self.Brd_GGR.append(round(event.xdata))
 
@@ -426,6 +491,12 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def RR_Slot(self):
 
+        '''
+        Triggers when AA button in interface pressed. Checks if user trys to overwrite the current selection.
+        Changes cursor to cross within the plot. triggers function to grap the interval after mouse press.
+        Returns:
+
+        '''
         # reset
         if len(self.Brd_RR) == 2:
             self.red_span.remove()
@@ -437,6 +508,17 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.cid = self.lifetime2_plot.canvas.mpl_connect("button_press_event", self.get_Brd_RR)
 
     def get_Brd_RR(self, event):
+
+        '''
+        Gets tge x,y interval for channel 1 & 3, draws the span into the plot and applies the filters. Afterwards
+        cursor gets reset.
+        -> Has to be done after the GRR part
+        Args:
+            event: Klick event
+
+        Returns:
+
+        '''
 
         self.Brd_RR.append(round(event.xdata))
 
@@ -470,6 +552,12 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             print('Condition in GR not fullfilled:\nlen(self.Brd_RR) != 2')
 
     def NormButtonEvent(self):
+        '''
+        Event triggered when Display is pressed by user. Channel range can be provided. This will alter the
+        lifetime plots and computes new Parallel II and Perpendicular T values for the channels
+        Returns:
+
+        '''
 
         # get current channel settings
         channels = [int(self.lower_Norm.text()), int(self.upper_Norm.text())]
@@ -481,7 +569,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.hRII = self.hRII - np.mean(self.hRII[channels[0]-1:channels[1]])
         self.hRT = self.hRT - np.mean(self.hRT[channels[0]-1:channels[1]])
 
-        #
         # update lifetime plots
         self.plot_lifetime1()
         self.plot_lifetime2()
@@ -495,7 +582,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                & (self.RawData[:, 1] <= self.Brd_RR[1]))
 
 
-        # Todo: Figure out if those values should be precalculated at different position
+
         tt = np.arange(1,len(self.RawInt[0])+2)
         self.meastime = tt[-1] / 1000 * self.BinSize
 
@@ -507,7 +594,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.reduG = np.zeros(int(numArr))
         self.reduRR = np.zeros(int(numArr))
 
-        timeWindow = np.array([0, 999999*self.BinSize] ,dtype=np.uint64)
+        timeWindow = np.array([0, 999999*self.BinSize], dtype=np.uint64)
 
         iterInt = 0
         for i in range(len(self.reduData)):
@@ -549,6 +636,16 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
 
     def BurstButtonEvent(self):
+
+        '''
+        Event after the Raw Data button in the GUI gets pressed. Creates three plots.
+        1. Macrotime plot
+        2. Donor - Acceptor over time
+        3. Total vs. Time (s) Histogram
+        Returns:
+
+        '''
+
         # event after Burst button pressed
 
         self.get_current_settings()
@@ -621,6 +718,13 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         fig3.show()
 
     def handle_duplicated_files(self):
+
+        '''
+        Triggers when there is a file conflict -> Analysis dir already contains BData files.
+        -> User can decide if files should be overwritten or new suffix should be used
+
+        '''
+
         # Trigger dialog on how to handle file conflicts
 
         self.duplicate_files_di.exec_()
@@ -659,10 +763,20 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         else:
             return
 
-    # Todo: Figure out why dummy is required
-    # Problem is that the first input will turn False no matter what. The rest can be used as usual
-    # Could also be solved by global variables..
     def AnalyzeButtonEvent(self, dummy=True, IRF_calcs=True, Check_Files=True):
+
+        '''
+        Does the full burst analysis
+        Args:
+            dummy: dummy required to prevent error (no one knows why)
+            IRF_calcs: Channel based IRF averaging
+            Check_Files: Check if there are already analysis files (bdata) in the selected folder
+            -> If that is the case user will be asked if they should be overwritten. If not user
+            has to change the file suffix
+
+        Returns:
+
+        '''
 
         # load current settings
         self.get_current_settings()
@@ -671,7 +785,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.get_settings_dict()
 
         if IRF_calcs:
-            # obtain average IRF shift
+            #Todo: Check if statement since code will break for IRF_calcs -> False
+            # obtain average IRF shift -> This is now actually required for the script to work
             meanIRFG = (np.sum(np.arange(1, len(self.newIRF_G) + 1, 1) * self.newIRF_G) / np.sum(self.newIRF_G) +
                         self.Brd_GGR[0]) * self.dtBin / 1000
 
@@ -712,19 +827,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         start = time.time()
 
-        # Backend loky is a robust multiprocessing backend with the disadvantage of creating a little more
-        # overhead and communication required than "pure" multiprocessing. Still works very good.
-        # multi threading does not work out due to global interpreter locks introduced by heavy object usage.
-        # Simpler: Leads to a situation in which all parallel processes have to wait for a single one that works on a
-        # very large file.
 
-        '''test_file = [eval_folder, self.suffix, self.Brd_GGR, self.Brd_RR, self.threIT, self.threITN, self.minPhs, self.newIRF_G_II, self.newIRF_G_T,
-                  meanIRFG_II, meanIRFG_T, self.newIRF_R_II, self.newIRF_R_T, meanIRFR_II, meanIRFR_T, self.dtBin, self.setLeeFilter, self.boolFLA,
-                  self.boolTotal, self.minGR, self.minR0, self.boolPostA, self.tauFRET, self.tauALEX, self.settings_dict, workers]
-
-        with open('/Users/philipp/Desktop/Work/WHK Schlierf Group/autoFRET_SchliefGroupGit/autoFRET/Test_Data/SampleBurstIn.pkl', 'wb') as f:
-            pickle.dump(test_file, f)
-        '''
         par_burst(eval_folder, self.suffix, self.Brd_GGR, self.Brd_RR, self.threIT, self.threITN, self.minPhs, self.newIRF_G_II, self.newIRF_G_T,
                   meanIRFG_II, meanIRFG_T, self.newIRF_R_II, self.newIRF_R_T, meanIRFR_II, meanIRFR_T, self.dtBin, self.setLeeFilter, self.boolFLA,
                   self.boolTotal, self.minGR, self.minR0, self.boolPostA, self.tauFRET, self.tauALEX, self.settings_dict, workers)
@@ -738,6 +841,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         pass
 
     def get_current_settings(self):
+        '''
+        Reads in all settings from the GUI, changes format (str -> float/int/bool)
+        '''
+
         # read Setting Values
         # get integer values of boxes
         self.setLeeFilter = int(self.leeFilterBox.text())
@@ -781,6 +888,14 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
 
     def get_settings_dict(self):
+
+        '''
+        Creates a highly standarderized settings dictionary. Note that the keys are actually variables used in the
+        settings definiations of the BatUi. This is key to easily import settings from a file.
+        Returns: None
+
+        '''
+
         self.get_current_settings() #get current settings just in case they are not updated
         self.settings_dict = dict() #init dict for output
 
@@ -804,8 +919,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.settings_dict['minTotalTick'] = self.boolTotal
         self.settings_dict['thirtythirtyCheck'] = self.thirty_thirty
 
-        #Todo: Add the user selected channels R & G to the settings file
-        # --> Also make sure that they will be executed when setting file gets imported
 
         self.settings_dict['Brd_GGR'] = self.Brd_GGR
         self.settings_dict['Brd_RR'] = self.Brd_RR
@@ -813,12 +926,19 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def export_settings(self):
 
+        '''
+        Creates a .csv file containing all current settings of pyBAT. Standard format guided by settings dictionary
+        -> Can be read again by the software using import settings
+        Returns: Nothing if file path is not selected -> User closes the window
+
+
+        '''
+
         # get current settings as dictionary
         self.get_settings_dict()
 
         filepath = QtWidgets.QFileDialog.getSaveFileName(self, caption="Give File Name",filter='*.csv')
-        #folder = QtWidgets.QFileDialog.getExistingDirectory(
-        #    self, "Select Directory")
+
 
         # if nothing selected
         if filepath[0] == '':
@@ -829,6 +949,12 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def import_settings(self):
 
+        '''
+        Function that imports a standard format settings .csv file. File NEEDS to be in correct format.
+        Order of settings in file does not matter but the naming is important. Uses literal eval.
+        Returns: Return nothing if fail
+
+        '''
         # getting setting file
         file_path = QtWidgets.QFileDialog.getOpenFileName(self, caption="Select a settings file (.csv)",
                                                           filter='*.csv')
