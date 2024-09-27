@@ -188,34 +188,6 @@ class Ui_MainWindow(object):
         self.AA_Button.setDisabled(True)
         grid.addWidget(self.AA_Button, 1, 0, 1, 4)
 
-        '''self.lower_Norm = QLineEdit()
-        self.lower_Norm.setText('1')
-        self.lower_Norm.setDisabled(True)
-        self.lower_Norm.setValidator(QIntValidator())
-        grid.addWidget(self.lower_Norm, 2, 0)
-
-        ToText = QLabel('to')
-        ToText.setFont(QFont(font_style, font_size))
-        grid.addWidget(ToText, 2, 1, 1, 1)
-
-        self.upper_Norm = QLineEdit()
-        self.upper_Norm.setText('10')
-        self.upper_Norm.setValidator(QIntValidator())
-        self.upper_Norm.setDisabled(True)
-        grid.addWidget(self.upper_Norm, 2, 2)
-
-        ChannelText = QLabel('channels')
-        ChannelText.setFont(QFont(font_style, font_size))
-        grid.addWidget(ChannelText, 2, 3)
-
-        self.NormButton = QtWidgets.QPushButton()
-        self.NormButton.setText('Correct')
-        self.NormButton.setDisabled(True)
-        grid.addWidget(self.NormButton, 3, 0, 1, 4)'''
-
-
-
-
         groupBox.setLayout(grid)
 
 
@@ -365,7 +337,8 @@ class Ui_MainWindow(object):
         file_suffix_text = QLabel('File\nSuffix')
         file_suffix_text.setFont(QFont(font_style, font_size))
         self.fileSuffixBox = QLineEdit()
-        self.fileSuffixBox.setMaximumWidth(40)
+        #self.fileSuffixBox.setMaximumWidth(100)
+        self.fileSuffixBox.setMinimumWidth(95)
         self.fileSuffixBox.setText('1')
 
         files_per_bin_text = QLabel('Files per\n*.bin')
@@ -405,6 +378,12 @@ class Ui_MainWindow(object):
         self.tauALEXbox.setValidator(QIntValidator())
         self.tauALEXbox.setText('75')
         self.tauALEXbox.setMaximumWidth(40)
+
+        # tick box for threshold based burst filtering
+        self.threshTick = QCheckBox()
+        self.threshTick.setLayoutDirection(QtCore.Qt.RightToLeft)
+
+
 
 
         # add widgets to grid
@@ -449,7 +428,7 @@ class Ui_MainWindow(object):
         grid.addWidget(self.CoreSelectBox, 10, 2)
 
         grid.addWidget(self.thirtythirtyCheck, 11, 0)
-        grid.addWidget(self.refreshButton, 11, 2,1,2)
+        grid.addWidget(self.refreshButton, 11, 2, 1, 2)
 
 
 
