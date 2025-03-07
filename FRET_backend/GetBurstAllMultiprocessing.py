@@ -280,9 +280,30 @@ def getBurstAllIntensity(filename, pathname, suffix, lastBN, roiRG, roiR0, threI
 
     # Todo: Here binning of PhotonsSGR0 from start to stop with GUI set binning (default 1ms) -> Hist fun
     # --> The result is called intensity trace
-    # filter bins for thresholds (minPHS, minGR, minR0) --> User decision what should be used
-    # minPHS for combined binning; minGR green + minRO red depending on user input (binary setting)
+
+
+    # How to get intensity trace:
+    # --> Third row in intensitytrace for new binning (histc) with edges as bin time (defualt 1ms from interface)
+    # (check for ns vs. ms. possible devide by 1000) (start from first photon)
+
+    # --> Same binning for PhotonsSGR & PhotonsR0
+
+
+    # --> Filter with minPHS for Intensity; minGR for PhotonsSGR and minR0 PhotonsR0 (>=)
+
+    # Result is an index vector with bins that are in the criteria (masking 0 false 1 true given thresh) for n per bin
+
+    # Return all valid photons from bins
+
+
+
+
+    # filter bins for thresholds (minPHS, minGR (min. Photons (20), minR0 (min. Photons (40)) --> User decision what should be used
+    # minPHS for combined binning; minGR green + minR0 red depending on user input (binary setting)
     # return index for thresh full filled
+
+    # In GUI bin time for hist function (custom binning width) + add radio button for different search IPT
+    # (new bin time grey) vs. Intensity (IPD grey out)
 
     with open('/Users/philipp/Desktop/Work/WHK Schlierf Group/autoFRET_SchliefGroupGit/autoFRET/Test_Data/PhotonsSGR0.pkl', 'wb') as f:
         pickle.dump(PhotonsSGR0, f)

@@ -11,6 +11,8 @@ workspace.xml
 tasks.xml
 
 
+FRET_backend/GetBurst_ThreholdBurstDetect.py
+
 Test_Binning.py
 FRET_backend/numba_getBurstAll.py
 FRET_backend/GetBurstAllMultiprocessing.py
@@ -19,5 +21,7 @@ FRET_backend/GetBurstAllMultiprocessing.py
 Test_Data/*
 Test_Data
 Read_PTU/*
+
+
 
 
