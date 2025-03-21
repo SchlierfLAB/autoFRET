@@ -802,8 +802,7 @@ def par_burst(eval_folder, suffix, Brd_GGR, Brd_RR, threIT, threIT2, minPhs, IRF
 
 if __name__ == '__main__':
     import pickle
-    test_folder_path = '/Users/philipp/Desktop/Work/WHK Schlierf Group/smFRET_Software/speed_tests' \
-                       '/DeadLockMEas/DeadLockFull/E11'
+
 
     with open('/Users/philipp/Desktop/Work/WHK Schlierf Group/autoFRET_SchliefGroupGit/autoFRET/Test_Data/SampleBurstIn.pkl', 'rb') as f:
         sample_data = pickle.load(f)

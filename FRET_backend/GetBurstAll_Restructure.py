@@ -214,16 +214,19 @@ def getBurstAll(filename, pathname, suffix, lastBN, roiRG, roiR0, threIT, threIT
         print(f'The file {filename} has too much background and will not be analyzed.')
         return []
 
-    # Compute burst statistics (FRET, ALEX, lifetimes)
-    BurstData = seperate_photons(PhotonsSGR0, Bursts['Bursts'], bLengthLong, bStartLong, roiRG, roiR0,
-                                 interPhT, tauFRET, tauALEX)
+    # seperate photons
+    seperated_photons = seperate_photons(PhotonsSGR0, Bursts['Bursts'], bLengthLong, bStartLong, roiRG, roiR0, tauFRET, tauALEX)
 
+    # Compute burst statistics (FRET, ALEX, lifetimes) and add everything to final output matrix for saving
+    output_mat = compute_final_statistic(Bursts['Bursts'], seperated_photons, boolTotal, threAveT, minGR, minR0, roiR0, roiMLE_G, roiMLE_R,
+                            newIRF_G_II, meanIRFG_II, newIRF_G_T, meanIRFG_T, newIRF_R_II, meanIRFR_II, newIRF_R_T,
+                            meanIRFR_T, dtBin, boolFLA, Background, edges, lastBN)
 
 
     # Save burst data
-    save_burst_data(pathname, suffix, BurstData, boolPostA)
+    save_burst_data(pathname, suffix, output_mat, boolPostA)
 
-    return BurstData
+    return output_mat
 
 
 # ---- Sub-functions ---- #
@@ -351,7 +354,6 @@ def process_bursts(PhotonsSGR0, Photons_Raw, bStartLong, bLengthLong,  edges, pa
         lInd += int(bLengthLong[i])
 
     # ---- Compute Photon Histograms ---- #
-    #dataAll = {"photonHIST": np.zeros((len(edges) - 1, 2))}
 
     # channel histogram
     strAllHIST = pathname + '/allHIST.npy'
@@ -467,7 +469,7 @@ def seperate_photons(PhotonsSGR0, Bursts, bLengthLong, bStartLong, roiRG, roiR0,
 
     # compute interphoton time
     interPhT = PhotonsSGR0[1:, 2] - PhotonsSGR0[0:-1, 2]
-    """Compute relevant statistics for each burst (FRET, ALEX, lifetimes)."""
+
     # prefill = np.zeros(len(bLengthLong))
     arrAlex_2CDE_ = np.zeros(len(bLengthLong))
     arrFRET_2CDE_ = np.zeros(len(bLengthLong))
@@ -541,15 +543,15 @@ def seperate_photons(PhotonsSGR0, Bursts, bLengthLong, bStartLong, roiRG, roiR0,
         arrFRET_2CDE_[i] = FRET_2CDE(macroR * 1e-6, macroG * 1e-6, tauFRET/1000)
         arrAlex_2CDE_[i] = Alex_2CDE(macroR0 * 1e-6, macroGR * 1e-6, tauALEX/1000)
 
-    seperate_photons = {'arrAlex_2CDE':arrAlex_2CDE_, 'arrFRET_2CDE':arrFRET_2CDE_, 'NG':NG_, 'NGII':NGII_,
+    seperated_photons = {'arrAlex_2CDE':arrAlex_2CDE_, 'arrFRET_2CDE':arrFRET_2CDE_, 'NG':NG_, 'NGII':NGII_,
                         'NGT':NGT_, 'NR':NR_, 'NRII':NRII_, 'NRT':NRT_, 'NR0':NR0_, 'NR0II':NR0II_, 'NR0T':NR0T_,
                         'TBurst':TBurst_, 'TGR':TGR_, 'TR0':TR0_}
 
-    return seperate_photons
+    return seperated_photons
 
 def compute_final_statistic(Bursts, seperate_photons, boolTotal, threAveT, minGR, minR0, roiR0, roiMLE_G, roiMLE_R,
                             newIRF_G_II, meanIRFG_II, newIRF_G_T, meanIRFG_T, newIRF_R_II, meanIRFR_II, newIRF_R_T,
-                            meanIRFR_T, dtBin, boolFLA, edges, lastBN):
+                            meanIRFR_T, dtBin, boolFLA, Background, edges, lastBN):
 
     dTGR_TR0_ = seperate_photons['TGR'] - seperate_photons['TR0']
     dTGR_TR0_[np.isnan(seperate_photons['TR0'])] = 9.9
@@ -576,14 +578,12 @@ def compute_final_statistic(Bursts, seperate_photons, boolTotal, threAveT, minGR
     arrFRET_2CDE = seperate_photons['arrFRET_2CDE'][accBIndex]
     arrAlex_2CDE = seperate_photons['arrAlex_2CDE'][accBIndex]
 
-    accBursts = np.array([])
-
+    # Taus parallel II and perpendicular T
     tauArrD_II = np.zeros(len(accBIndex))
     tauArrD_T = np.zeros(len(accBIndex))
     tauArrA_II = np.zeros(len(accBIndex))
     tauArrA_T = np.zeros(len(accBIndex))
 
-    # edges = np.arange(1, 4097)
 
     accBursts = np.zeros([np.sum(np.isin(Bursts[:, 0], accBIndex + 1)), 4])
     actIndex = 0
@@ -669,6 +669,8 @@ def compute_final_statistic(Bursts, seperate_photons, boolTotal, threAveT, minGR
         else:
             tauArrA_T[i] = 0
 
+    backgroundRates = Background['Background Rates']
+
     BurstData = np.array([(lastBN + np.arange(len(NG)) + 1).tolist(),
                           [el[0] for el in NG],
                           [el[0] for el in NGII],
@@ -679,12 +681,12 @@ def compute_final_statistic(Bursts, seperate_photons, boolTotal, threAveT, minGR
                           [el[0] for el in NR0],
                           [el[0] for el in NR0II],
                           [el[0] for el in NR0T],
-                          (np.ones(len(NG)) * BGII).tolist(),
-                          (np.ones(len(NG)) * BGT).tolist(),
-                          (np.ones(len(NG)) * BRII).tolist(),
-                          (np.ones(len(NG)) * BRT).tolist(),
-                          (np.ones(len(NG)) * BR0II).tolist(),
-                          (np.ones(len(NG)) * BR0T).tolist(),
+                          (np.ones(len(NG)) * backgroundRates['BGII']).tolist(),
+                          (np.ones(len(NG)) * backgroundRates['BGT']).tolist(),
+                          (np.ones(len(NG)) * backgroundRates['BRII']).tolist(),
+                          (np.ones(len(NG)) * backgroundRates['BRT']).tolist(),
+                          (np.ones(len(NG)) * backgroundRates['BR0II']).tolist(),
+                          (np.ones(len(NG)) * backgroundRates['BR0T']).tolist(),
                           [el[0] for el in TBurst],
                           [el[0] for el in arrFRET_2CDE],
                           [el[0] for el in arrAlex_2CDE],
@@ -848,8 +850,6 @@ def par_burst(eval_folder, suffix, Brd_GGR, Brd_RR, threIT, threIT2, minPhs, IRF
 
 if __name__ == '__main__':
     import pickle
-    test_folder_path = '/Users/philipp/Desktop/Work/WHK Schlierf Group/smFRET_Software/speed_tests' \
-                       '/DeadLockMEas/DeadLockFull/E11'
 
     with open('/Users/philipp/Desktop/Work/WHK Schlierf Group/autoFRET_SchliefGroupGit/autoFRET/Test_Data/SampleBurstIn.pkl', 'rb') as f:
         sample_data = pickle.load(f)
