@@ -177,32 +177,48 @@ def getBurstAll(filename, pathname, suffix, lastBN, roiRG, roiR0, threIT, threIT
 
     Parameters:
         method: str
-            - 'time_based': Use the original burst detection method (inter-photon time)
-            - 'intensity_based': Use the new intensity-based thresholding method
+            - 'time_based': Use inter-photon time filtering
+            - 'intensity_based': Use intensity thresholding
     """
 
     # Load and preprocess photon data
-    Photons = load_photon_data(pathname, filename, roiRG, roiR0)
+    Photons, Photons_Raw, PhotonsSGR0 = load_photon_data(pathname, filename, roiRG, roiR0, return_raw=True)
 
-    # Detect burst with method based on user input
+    # Define binning range for intensity-based method
+    edges = np.arange(1, 4097, 1)  # 1 ms binning
+
+    # Detect bursts with the selected method
     if method == 'time_based':
-        Bursts, background_data = detect_bursts_time_based(Photons, threIT, threIT2, minPhs, checkInner, boolTotal, setLeeFilter)
+        bStartLong, bLengthLong, bStartLongN, bLengthLongN = detect_bursts_time_based(
+            PhotonsSGR0, Photons_Raw, threIT, threIT2, minPhs, checkInner, boolTotal, setLeeFilter, edges
+        )
+
+    #Todo: Adapt naming to -> bStartLong, bLengthLong, bStartLongN, bLengthLongN which are extensions in time filter
+    #and probably same as bStart as is in the intensity case
     elif method == 'intensity_based':
-        # Todo: Decide on which bursts exactly shoudl be used
-        Bursts, background_data = detect_bursts_intensity_based(Photons, minPhs, minGR)
+        bStart, bLength, bStart_1_3, bLength_1_3, bStart_2_4, bLength_2_4, bStartN, bLengthN = detect_bursts_intensity_based(
+            Photons, minPhs, minGR, edges
+        )
     else:
         raise ValueError("Invalid method. Choose 'time_based' or 'intensity_based'.")
 
+
+
+    # Extract bursts and background
+    Bursts = process_bursts(PhotonsSGR0, Photons_Raw, bStartLong, bLengthLong,  edges, pathname)
+    Background = compute_background(pathname, PhotonsSGR0, bStartLongN, bLengthLongN, roiRG, roiR0, edges)
+
+
     # If no valid bursts are found, return empty
-    if len(Bursts) == 0:
+    if len(Bursts['Bursts']) == 0:
         print(f'The file {filename} has too much background and will not be analyzed.')
         return []
 
     # Compute burst statistics (FRET, ALEX, lifetimes)
-    BurstData = process _burst_statistics(Bursts, background_data, roiMLE_G, roiMLE_R, dtBin, boolFLA,
-                                         newIRF_G_II, newIRF_G_T, meanIRFG_II, meanIRFG_T,
-                                         newIRF_R_II, newIRF_R_T, meanIRFR_II, meanIRFR_T,
-                                         tauFRET, tauALEX)
+    BurstData = seperate_photons(PhotonsSGR0, Bursts['Bursts'], bLengthLong, bStartLong, roiRG, roiR0,
+                                 interPhT, tauFRET, tauALEX)
+
+
 
     # Save burst data
     save_burst_data(pathname, suffix, BurstData, boolPostA)
@@ -212,7 +228,7 @@ def getBurstAll(filename, pathname, suffix, lastBN, roiRG, roiR0, threIT, threIT
 
 # ---- Sub-functions ---- #
 
-def load_photon_data(pathname, filename, roiRG, roiR0):
+def load_photon_data(pathname, filename, roiRG, roiR0, return_raw=False):
     """ Load and filter raw photon data from a PTU file. """
     file_instance = Read_PTU(pathname + '/' + filename)
     Photons_Raw = file_instance.RawData
@@ -222,27 +238,37 @@ def load_photon_data(pathname, filename, roiRG, roiR0):
             (Photons_Raw[:, 1] >= roiRG[0]) & (Photons_Raw[:, 1] <= roiRG[1]) |
             (Photons_Raw[:, 1] >= roiR0[0]) & (Photons_Raw[:, 1] <= roiR0[1]))]
 
-    return Photons
+    # keep just real data and seperate them in channels
+    PhotonsSGR0 = Photons[(Photons[:, 0] == 1) | (Photons[:, 0] == 2) | (Photons[:, 0] == 3) | (Photons[:, 0] == 4),
+                  0:3]
+
+    if return_raw:
+        return Photons, Photons_Raw, PhotonsSGR0
+    else:
+        return Photons, PhotonsSGR0
 
 
-def detect_bursts_time_based(Photons, threIT, threIT2, minPhs, checkInner, boolTotal, setLeeFilter):
-    """ Original burst detection based on inter-photon time filtering. """
-    # Extract inter-photon times
-    interPhT = Photons[1:, 2] - Photons[:-1, 2]
+def detect_bursts_time_based(PhotonsSGR0, Photons_Raw, threIT, threIT2, minPhs, checkInner, boolTotal, setLeeFilter, edges):
+    """Burst detection based on inter-photon time filtering."""
+
+    # Extract inter-photon times and apply Lee Filter
+    interPhT = PhotonsSGR0[1:, 2] - PhotonsSGR0[:-1, 2]
     interLee = leeFilter(interPhT, setLeeFilter)
 
-    # Apply first filtering step (inter-photon time threshold)
+    # Identify burst-related events based on inter-photon times
     indexSig = np.argwhere((0.4 < interLee) & (interLee < (threIT * 1e6)))
     indexSigN = np.argwhere(interLee > (threIT2 * 1e6))
 
     if indexSig.size == 0 or indexSigN.size == 0:
-        return [], {}
+        # Print relevant file and return empty
+        print(f'The Current file has to much background and will not be analyzed')
+        return []
 
-    # Identify bursts based on detected events
+    # Detect bursts and background
     bStart, bLength = burstLoc(indexSig, 1)
     bStartN, bLengthN = burstLoc(indexSigN, 1)
 
-    # Apply additional burst-length filtering
+    # Filter bursts
     if boolTotal == 1:
         if checkInner == 1:
             bStartLong = bStart[bLength >= minPhs] + 30
@@ -258,14 +284,14 @@ def detect_bursts_time_based(Photons, threIT, threIT2, minPhs, checkInner, boolT
             bStartLong = bStart
             bLengthLong = bLength
 
-    return bStartLong, bLengthLong
+    # Background burst filtering
+    bStartLongN = bStartN[bLengthN >= 160] + 30
+    bLengthLongN = bLengthN[bLengthN >= 160] - 60
 
+    return bStartLong, bLengthLong, bStartLongN, bLengthLongN
 
-def detect_bursts_intensity_based(Photons, minPhs, minGR):
-    """ New burst detection based on intensity thresholding with background estimation. """
-
-    # Define binning range (1 ms binning)
-    edges = np.arange(1, 4097, 1)
+def detect_bursts_intensity_based(Photons, minPhs, minGR, edges):
+    """Burst detection using intensity thresholding, returning burst indices and background."""
 
     # Keep only real data (channels 1–4)
     PhotonsSGR0 = Photons[np.isin(Photons[:, 0], [1, 2, 3, 4]), 0:3]
@@ -274,140 +300,403 @@ def detect_bursts_intensity_based(Photons, minPhs, minGR):
     subarray_1_3 = PhotonsSGR0[np.isin(PhotonsSGR0[:, 0], [1, 3])]  # Donor (SGR)
     subarray_2_4 = PhotonsSGR0[np.isin(PhotonsSGR0[:, 0], [2, 4])]  # Acceptor (R0)
 
-    # Save data for debugging
-    # Todo: remove when done
-    with open('PhotonsSGR0.pkl', 'wb') as f:
-        pickle.dump(PhotonsSGR0, f)
-
     # ---- Intensity Binning ---- #
 
     # Bin total intensity (all channels)
     BinsSGR0 = histc(PhotonsSGR0[:, 1], edges)
     valid_bins = np.where(BinsSGR0[0] >= minPhs)[0]
-    IntensityTrace = PhotonsSGR0[np.isin(BinsSGR0[0], valid_bins)]
 
-    # Bin donor channel intensity (1 & 3)
+    # Bin donor (1 & 3) and acceptor (2 & 4) separately
     Bins_1_3 = histc(subarray_1_3[:, 1], edges)
     valid_bins_1_3 = np.where(Bins_1_3[0] >= minGR)[0]
-    Intensity_1_3 = subarray_1_3[np.isin(Bins_1_3[0], valid_bins_1_3)]
 
-    # Bin acceptor channel intensity (2 & 4)
     Bins_2_4 = histc(subarray_2_4[:, 1], edges)
     valid_bins_2_4 = np.where(Bins_2_4[0] >= minGR)[0]
-    Intensity_2_4 = subarray_2_4[np.isin(Bins_2_4[0], valid_bins_2_4)]
+
+    # ---- Burst Detection ---- #
+
+    # Find burst indices (total, donor, acceptor)
+    bStart, bLength = burstLoc(valid_bins, 1)
+    bStart_1_3, bLength_1_3 = burstLoc(valid_bins_1_3, 1)
+    bStart_2_4, bLength_2_4 = burstLoc(valid_bins_2_4, 1)
 
     # ---- Background Estimation ---- #
 
     # Identify background regions (bins below threshold)
     background_bins = np.where(BinsSGR0[0] < minPhs)[0]
-    BackgroundTrace = PhotonsSGR0[np.isin(BinsSGR0[0], background_bins)]
+    bStartN, bLengthN = burstLoc(background_bins, 1)
 
-    # Background for Donor (1&3)
-    background_bins_1_3 = np.where(Bins_1_3[0] < minGR)[0]
-    Background_1_3 = subarray_1_3[np.isin(Bins_1_3[0], background_bins_1_3)]
+    return (
+        bStart, bLength,  # Total burst indices
+        bStart_1_3, bLength_1_3,  # Donor channel bursts
+        bStart_2_4, bLength_2_4,  # Acceptor channel bursts
+        bStartN, bLengthN  # Background burst indices
+    )
 
-    # Background for Acceptor (2&4)
-    background_bins_2_4 = np.where(Bins_2_4[0] < minGR)[0]
-    Background_2_4 = subarray_2_4[np.isin(Bins_2_4[0], background_bins_2_4)]
+def process_bursts(PhotonsSGR0, Photons_Raw, bStartLong, bLengthLong,  edges, pathname):
+    """Process bursts and compute histograms, background rates, and save results."""
 
-    # Return structured burst and background data
+    if bStartLong is None or bLengthLong is None:
+        return None
+
+    # ---- Extract Bursts Data ---- #
+    Bursts = np.zeros([int(np.sum(bLengthLong)), 4])
+    lInd = 0
+
+    for i in range(len(bStartLong)):
+        Bursts[lInd:lInd + int(bLengthLong[i]), :] = np.c_[
+            np.ones(int(bLengthLong[i])) * (i + 1),
+            PhotonsSGR0[int(bStartLong[i]) + 1: int(bStartLong[i]) + int(bLengthLong[i]) + 1, 0:4]
+        ]
+        lInd += int(bLengthLong[i])
+
+    # ---- Compute Photon Histograms ---- #
+    #dataAll = {"photonHIST": np.zeros((len(edges) - 1, 2))}
+
+    # channel histogram
+    strAllHIST = pathname + '/allHIST.npy'
+    dataAll = np.load(strAllHIST, allow_pickle=True)
+
+    for i in range(len(bStartLong)):
+        hAll, _ = histc(
+            Photons_Raw[
+                (Photons_Raw[:, 0] != 15) & ((Photons_Raw[:, 0] == 1) | (Photons_Raw[:, 0] == 3)) &
+                ((Photons_Raw[:, 2] >= PhotonsSGR0[bStartLong[i], 2]) &
+                 (Photons_Raw[:, 2] <= PhotonsSGR0[bStartLong[i] + int(bLengthLong[i]), 2])),
+                1
+            ],
+            edges
+        )
+
+        dataAll.item().get('photonHIST')[:, 0] += hAll
+
+        hAll, _ = histc(
+            Photons_Raw[
+                (Photons_Raw[:, 0] != 15) & ((Photons_Raw[:, 0] == 2) | (Photons_Raw[:, 0] == 4)) &
+                ((Photons_Raw[:, 2] >= PhotonsSGR0[bStartLong[i], 2]) &
+                 (Photons_Raw[:, 2] <= PhotonsSGR0[bStartLong[i] + int(bLengthLong[i]), 2])),
+                1
+            ],
+            edges
+        )
+        dataAll.item().get('photonHIST')[:,1] += hAll
+
+    strAllHIST = pathname + '/allHIST.npy'
+
+    # channel background histogram and background counts
+    np.save(strAllHIST, dataAll)
+
+
     return {
-        "Bursts": {
-            "Total": IntensityTrace,
-            "Donor (1&3)": Intensity_1_3,
-            "Acceptor (2&4)": Intensity_2_4
-        },
-        "Background": {
-            "Total": BackgroundTrace,
-            "Donor (1&3)": Background_1_3,
-            "Acceptor (2&4)": Background_2_4
-        }
+        "Bursts": Bursts,
+        "Histograms": dataAll
     }
 
-def process_burst_statistics(Bursts, background_data, roiMLE_G, roiMLE_R, dtBin, boolFLA,
-                             newIRF_G_II, newIRF_G_T, meanIRFG_II, meanIRFG_T,
-                             newIRF_R_II, newIRF_R_T, meanIRFR_II, meanIRFR_T,
-                             tauFRET, tauALEX):
+def compute_background(pathname, PhotonsSGR0, bStartLongN, bLengthLongN, roiRG, roiR0, edges):
+    # ---- Compute Background Data ---- #
+    BackNGII, BackNGT, BackNRII, BackNRT, BackNR0II, BackNR0T, BackT = 0, 0, 0, 0, 0, 0, 0
+
+    strHIST = pathname + '/backHIST.npy'
+    background_data = np.load(strHIST, allow_pickle=True)
+
+    for i in range(len(bStartLongN)):
+        GapPhotons = PhotonsSGR0[bStartLongN[i] + 1: bStartLongN[i] + int(bLengthLongN[i]) + 1, 0:3]
+        BackT += GapPhotons[-1, 2] - GapPhotons[0, 2]
+
+        GapPhGII = GapPhotons[(GapPhotons[:, 0] == 2)
+                              & (GapPhotons[:, 1] >= roiRG[0])
+                              & (GapPhotons[:, 1] <= roiRG[1])]
+
+        GapPhGT = GapPhotons[(GapPhotons[:, 0] == 4)
+                             & (GapPhotons[:, 1] >= roiRG[0])
+                             & (GapPhotons[:, 1] <= roiRG[1])]
+
+        GapPhRII = GapPhotons[(GapPhotons[:, 0] == 1)
+                              & (GapPhotons[:, 1] >= roiRG[0])
+                              & (GapPhotons[:, 1] <= roiRG[1])]
+
+        GapPhRT = GapPhotons[(GapPhotons[:, 0] == 3)
+                             & (GapPhotons[:, 1] >= roiRG[0])
+                             & (GapPhotons[:, 1] <= roiRG[1])]
+
+        GapPhR0II = GapPhotons[(GapPhotons[:, 0] == 1)
+                               & (GapPhotons[:, 1] >= roiR0[0])
+                               & (GapPhotons[:, 1] <= roiR0[1])]
+
+        GapPhR0T = GapPhotons[(GapPhotons[:, 0] == 3)
+                              & (GapPhotons[:, 1] >= roiR0[0])
+                              & (GapPhotons[:, 1] <= roiR0[1])]
+
+        BackNGII += len(GapPhGII)
+        BackNGT += len(GapPhGT)
+        BackNRII += len(GapPhRII)
+        BackNRT += len(GapPhRT)
+        BackNR0II += len(GapPhR0II)
+        BackNR0T += len(GapPhR0T)
+
+        hGapPhGII, _ = histc(GapPhotons[(GapPhotons[:, 0] == 2)
+                                        & (GapPhotons[:, 1] >= roiRG[0])
+                                        & (GapPhotons[:, 1] <= roiRG[1]), 1], edges)
+
+        hGapPhGT, _ = histc(GapPhotons[(GapPhotons[:, 0] == 4)
+                                       & (GapPhotons[:, 1] >= roiRG[0])
+                                       & (GapPhotons[:, 1] <= roiRG[1]), 1], edges)
+
+        background_data.item().get('backHIST')[:,0] += hGapPhGII
+        background_data.item().get('backHIST')[:,1] += hGapPhGT
+        background_data.item().get('time')[0] += BackT / 1e9
+
+    np.save("backHIST.npy", background_data)
+
+    if BackT:
+        BGII = BackNGII / BackT * 1e9
+        BGT = BackNGT / BackT * 1e9
+        BRII = BackNRII / BackT * 1e9
+        BRT = BackNRT / BackT * 1e9
+        BR0II = BackNR0II / BackT * 1e9
+        BR0T = BackNR0T / BackT * 1e9
+    else:
+        BGII = BGT = BRII = BRT = BR0II = BR0T = 0
+
+    return {"Background Rates":
+                {"BGII": BGII, "BGT": BGT, "BRII": BRII, "BRT": BRT, "BR0II": BR0II, "BR0T": BR0T},
+            "Background Histograms": background_data
+        }
+
+def seperate_photons(PhotonsSGR0, Bursts, bLengthLong, bStartLong, roiRG, roiR0, tauFRET, tauALEX):
+
+    # compute interphoton time
+    interPhT = PhotonsSGR0[1:, 2] - PhotonsSGR0[0:-1, 2]
     """Compute relevant statistics for each burst (FRET, ALEX, lifetimes)."""
-
-    num_bursts = len(np.unique(Bursts[:, 0]))
-
-    # Initialize storage arrays
-    NG, NGII, NGT, NR, NRII, NRT, NR0, NR0II, NR0T = [np.zeros(num_bursts) for _ in range(9)]
-    TBurst, TGR, TR0 = np.zeros(num_bursts), np.zeros(num_bursts), np.zeros(num_bursts)
-    arrFRET_2CDE, arrAlex_2CDE = np.zeros(num_bursts), np.zeros(num_bursts)
-    tauArrD_II, tauArrD_T, tauArrA_II, tauArrA_T = np.zeros(num_bursts), np.zeros(num_bursts), np.zeros(
-        num_bursts), np.zeros(num_bursts)
-
-    for i, burst_id in enumerate(np.unique(Bursts[:, 0])):
-        # Extract single burst
-        sglBData = Bursts[Bursts[:, 0] == burst_id, 1:4]
-
-        # Count photons per channel
-        NGII[i] = np.count_nonzero(sglBData[:, 0] == 2)
-        NGT[i] = np.count_nonzero(sglBData[:, 0] == 4)
-        NG[i] = NGII[i] + NGT[i]
-
-        NRII[i] = np.count_nonzero(
-            (sglBData[:, 0] == 1) & (roiMLE_G[0] <= sglBData[:, 1]) & (sglBData[:, 1] <= roiMLE_G[1]))
-        NRT[i] = np.count_nonzero(
-            (sglBData[:, 0] == 3) & (roiMLE_G[0] <= sglBData[:, 1]) & (sglBData[:, 1] <= roiMLE_G[1]))
-        NR[i] = NRII[i] + NRT[i]
-
-        NR0II[i] = np.count_nonzero(
-            (sglBData[:, 0] == 1) & (roiMLE_R[0] <= sglBData[:, 1]) & (sglBData[:, 1] <= roiMLE_R[1]))
-        NR0T[i] = np.count_nonzero(
-            (sglBData[:, 0] == 3) & (roiMLE_R[0] <= sglBData[:, 1]) & (sglBData[:, 1] <= roiMLE_R[1]))
-        NR0[i] = NR0II[i] + NR0T[i]
-
-        # Compute burst duration (sum of inter-photon times)
-        TBurst[i] = np.sum(np.diff(sglBData[:, 2])) * 1e-9  # Convert to seconds
-
-        # Compute macrotime averages
-        macroGR = sglBData[(sglBData[:, 0] == 2) | (sglBData[:, 0] == 4), 2]
-        macroR0 = sglBData[((sglBData[:, 0] == 1) | (sglBData[:, 0] == 3)) & (roiMLE_R[0] <= sglBData[:, 1]) & (
-                    sglBData[:, 1] <= roiMLE_R[1]), 2]
-
-        if len(macroGR) > 0:
-            TGR[i] = np.mean(macroGR) * 1e-6  # Convert to microseconds
-        if len(macroR0) > 0:
-            TR0[i] = np.mean(macroR0) * 1e-6  # Convert to microseconds
-
-        # Compute FRET and ALEX efficiency
-        arrFRET_2CDE[i] = FRET_2CDE(macroR0 * 1e-6, macroGR * 1e-6, tauFRET / 1000)
-        arrAlex_2CDE[i] = Alex_2CDE(macroR0 * 1e-6, macroGR * 1e-6, tauALEX / 1000)
-
-        # Fluorescence Lifetime Estimation
-        edges = np.arange(1, 4097)  # Define binning range for histograms
-        accMicroGII = sglBData[sglBData[:, 0] == 2, 2]
-        accMicroGT = sglBData[sglBData[:, 0] == 4, 2]
-        accMicroRII = sglBData[
-            (sglBData[:, 0] == 1) & (roiMLE_G[0] <= sglBData[:, 1]) & (sglBData[:, 1] <= roiMLE_G[1]), 2]
-        accMicroRT = sglBData[
-            (sglBData[:, 0] == 3) & (roiMLE_G[0] <= sglBData[:, 1]) & (sglBData[:, 1] <= roiMLE_G[1]), 2]
-
-        # Compute histograms
-        hMicroGII, _ = np.histogram(accMicroGII, bins=edges)
-        hMicroGT, _ = np.histogram(accMicroGT, bins=edges)
-        hMicroRII, _ = np.histogram(accMicroRII, bins=edges)
-        hMicroRT, _ = np.histogram(accMicroRT, bins=edges)
-
-        # Lifetime estimation (apply IRF correction)
-        if any(hMicroGII):
-            tauArrD_II[i] = LifeMLE(newIRF_G_II, meanIRFG_II, hMicroGII, np.mean(accMicroGII), dtBin, boolFLA)
-        if any(hMicroGT):
-            tauArrD_T[i] = LifeMLE(newIRF_G_T, meanIRFG_T, hMicroGT, np.mean(accMicroGT), dtBin, boolFLA)
-        if any(hMicroRII):
-            tauArrA_II[i] = LifeMLE(newIRF_R_II, meanIRFR_II, hMicroRII, np.mean(accMicroRII), dtBin, boolFLA)
-        if any(hMicroRT):
-            tauArrA_T[i] = LifeMLE(newIRF_R_T, meanIRFR_T, hMicroRT, np.mean(accMicroRT), dtBin, boolFLA)
-
-    # Return processed data
-    return np.column_stack(
-        [NG, NGII, NGT, NR, NRII, NRT, NR0, NR0II, NR0T, TBurst, TGR, TR0, arrFRET_2CDE, arrAlex_2CDE, tauArrD_II,
-         tauArrD_T, tauArrA_II, tauArrA_T])
+    # prefill = np.zeros(len(bLengthLong))
+    arrAlex_2CDE_ = np.zeros(len(bLengthLong))
+    arrFRET_2CDE_ = np.zeros(len(bLengthLong))
+    NG_ = np.zeros(len(bLengthLong))
+    NGII_ = np.zeros(len(bLengthLong))
+    NGT_ = np.zeros(len(bLengthLong))
+    NR_ = np.zeros(len(bLengthLong))
+    NRII_ = np.zeros(len(bLengthLong))
+    NRT_ = np.zeros(len(bLengthLong))
+    NR0_ = np.zeros(len(bLengthLong))
+    NR0II_ = np.zeros(len(bLengthLong))
+    NR0T_ = np.zeros(len(bLengthLong))
+    TBurst_ = np.zeros(len(bLengthLong))
+    TGR_ = np.zeros(len(bLengthLong))  # averaged macrotime of total 530nm excited burst photons
+    TR0_ = np.zeros(len(bLengthLong))  # averaged macrotime of red 640nm exited burst photons
 
 
+    for i in range(len(bStartLong)):
+        N_ = Bursts[Bursts[:, 0] == (i + 1), 1:4]
+
+        NGII_[i] = np.count_nonzero(N_ == 2)
+
+        NGT_[i] = np.count_nonzero(N_ == 4)
+
+        NG_[i] = NGII_[i] + NGT_[i]
+
+        NRII_[i] = len(N_[(N_[:, 0] == 1)
+                          & (N_[:, 1] >= roiRG[0])
+                          & (N_[:, 1] <= roiRG[1]), 0])
+
+        NRT_[i] = len(N_[(N_[:, 0] == 3)
+                         & (N_[:, 1] >= roiRG[0])
+                         & (N_[:, 1] <= roiRG[1]), 0])
+
+        NR_[i] = NRII_[i] + NRT_[i]
+
+        NR0II_[i] = len(N_[(N_[:, 0] == 1)
+                           & (N_[:, 1] >= roiR0[0])
+                           & (N_[:, 1] <= roiR0[1]), 0])
+
+        NR0T_[i] = len(N_[(N_[:, 0] == 3)
+                          & (N_[:, 1] >= roiR0[0])
+                          & (N_[:, 1] <= roiR0[1]), 0])
+
+        NR0_[i] = NR0II_[i] + NR0T_[i]
+
+        TBurst_[i] = np.sum(interPhT[bStartLong[i]:bStartLong[i] + int(bLengthLong[i]) - 1] * 1e-9)
+
+        phBurst = PhotonsSGR0[bStartLong[i] + 1:bStartLong[i] + int(bLengthLong[i]) + 1, 0:3]
+
+        macroGR = phBurst[(phBurst[:, 0] == 2)
+                          | (phBurst[:, 0] == 4)
+                          | (((phBurst[:, 0] == 1) | (phBurst[:, 0] == 3)) & (phBurst[:, 1] >= roiRG[0]) & (
+                    phBurst[:, 1] <= roiRG[1])), 2]
+
+        macroR0 = phBurst[((phBurst[:, 0] == 1) | (phBurst[:, 0] == 3))
+                          & (phBurst[:, 1] >= roiR0[0])
+                          & (phBurst[:, 1] <= roiR0[1]), 2]
+
+        macroR = phBurst[((phBurst[:, 0] == 1) | (phBurst[:, 0] == 3))
+                         & (phBurst[:, 1] >= roiRG[0])
+                         & (phBurst[:, 1] <= roiRG[1]), 2]
+
+        macroG = phBurst[(phBurst[:, 0] == 2) | (phBurst[:, 0] == 4), 2]
+
+        TGR_[i] = np.sum(macroGR) / len(macroGR) * 1e-6
+        TR0_[i] = np.sum(macroR0) / len(macroR0) * 1e-6
+
+        # print((np.sum(macroGR) / len(macroGR) * 1e-6)-(np.sum(macroR0) / len(macroR0) * 1e-6))
+
+        arrFRET_2CDE_[i] = FRET_2CDE(macroR * 1e-6, macroG * 1e-6, tauFRET/1000)
+        arrAlex_2CDE_[i] = Alex_2CDE(macroR0 * 1e-6, macroGR * 1e-6, tauALEX/1000)
+
+    seperate_photons = {'arrAlex_2CDE':arrAlex_2CDE_, 'arrFRET_2CDE':arrFRET_2CDE_, 'NG':NG_, 'NGII':NGII_,
+                        'NGT':NGT_, 'NR':NR_, 'NRII':NRII_, 'NRT':NRT_, 'NR0':NR0_, 'NR0II':NR0II_, 'NR0T':NR0T_,
+                        'TBurst':TBurst_, 'TGR':TGR_, 'TR0':TR0_}
+
+    return seperate_photons
+
+def compute_final_statistic(Bursts, seperate_photons, boolTotal, threAveT, minGR, minR0, roiR0, roiMLE_G, roiMLE_R,
+                            newIRF_G_II, meanIRFG_II, newIRF_G_T, meanIRFG_T, newIRF_R_II, meanIRFR_II, newIRF_R_T,
+                            meanIRFR_T, dtBin, boolFLA, edges, lastBN):
+
+    dTGR_TR0_ = seperate_photons['TGR'] - seperate_photons['TR0']
+    dTGR_TR0_[np.isnan(seperate_photons['TR0'])] = 9.9
+
+    if boolTotal == 1:
+        accBIndex = np.argwhere(np.abs(dTGR_TR0_) < threAveT)
+    else:
+        accBIndex = np.argwhere((np.abs(dTGR_TR0_) < threAveT) & ((seperate_photons['NG'] + seperate_photons['NR'])
+                                                                  >= minGR) & (seperate_photons['NR0'] >= minR0))
+
+    dtGR_TR0 = dTGR_TR0_[accBIndex]
+
+    NG = seperate_photons['NG'][accBIndex]
+    NGII = seperate_photons['NGII'][accBIndex]
+    NGT = seperate_photons['NGT'][accBIndex]
+    NR = seperate_photons['NR'][accBIndex]
+    NRII = seperate_photons['NRII'][accBIndex]
+    NRT = seperate_photons['NRT'][accBIndex]
+    NR0 = seperate_photons['NR0'][accBIndex]
+    NR0II = seperate_photons['NR0II'][accBIndex]
+    NR0T = seperate_photons['NR0T'][accBIndex]
+    TBurst = seperate_photons['TBurst'][accBIndex]
+    TGR = seperate_photons['TGR'][accBIndex]
+    arrFRET_2CDE = seperate_photons['arrFRET_2CDE'][accBIndex]
+    arrAlex_2CDE = seperate_photons['arrAlex_2CDE'][accBIndex]
+
+    accBursts = np.array([])
+
+    tauArrD_II = np.zeros(len(accBIndex))
+    tauArrD_T = np.zeros(len(accBIndex))
+    tauArrA_II = np.zeros(len(accBIndex))
+    tauArrA_T = np.zeros(len(accBIndex))
+
+    # edges = np.arange(1, 4097)
+
+    accBursts = np.zeros([np.sum(np.isin(Bursts[:, 0], accBIndex + 1)), 4])
+    actIndex = 0
+
+    for i in range(len(accBIndex)):
+
+        sglBData = Bursts[Bursts[:, 0] == (accBIndex[i] + 1), 1:4]
+        numB = len(sglBData)
+
+        accBursts[actIndex:(actIndex + numB), :] = np.c_[
+            np.ones(numB) * (i + 1 + lastBN), Bursts[Bursts[:, 0] == (accBIndex[i] + 1), 1:4]]
+
+        actIndex += numB
+
+        accMicroGII = Bursts[(Bursts[:, 0] == accBIndex[i] + 1)
+                             & (Bursts[:, 1] == 2), 2]
+        accMicroGT = Bursts[(Bursts[:, 0] == accBIndex[i] + 1)
+                            & (Bursts[:, 1] == 4), 2]
+        accMicroRII = Bursts[(Bursts[:, 0] == accBIndex[i] + 1)
+                             & ((Bursts[:, 1] == 1)
+                                & (Bursts[:, 2] >= roiR0[0])
+                                & (Bursts[:, 2] <= roiR0[1])), 2]
+        accMicroRT = Bursts[(Bursts[:, 0] == accBIndex[i] + 1)
+                            & ((Bursts[:, 1] == 3)
+                               & (Bursts[:, 2] >= roiR0[0])
+                               & (Bursts[:, 2] <= roiR0[1])), 2]
+
+        hMicroGII, _ = histc(accMicroGII, edges)
+        hMicroGT, _ = histc(accMicroGT, edges)
+        hMicroG = hMicroGII[:] + hMicroGT[:]
+
+        hMicroRII, _ = histc(accMicroRII, edges)
+        hMicroRT, _ = histc(accMicroRT, edges)
+        hMicroR = hMicroRII[:] + hMicroRT[:]
+
+        # function defined IRF_G, meanIRFG, IRF_R, meanIRFR, roiMLE_G, roiMLE_R
+
+        roihMicroGII = hMicroGII[(roiMLE_G[0] - 1):roiMLE_G[1]]
+        roihMicroGT = hMicroGT[(roiMLE_G[0] - 1):roiMLE_G[1]]
+
+        roihMicroG = hMicroG[(roiMLE_G[0] - 1):roiMLE_G[1]]
+
+        roi_accMicroGII = accMicroGII[(roiMLE_G[0] <= accMicroGII)
+                                      & (accMicroGII <= roiMLE_G[1])]
+        roi_accMicroGT = accMicroGT[(roiMLE_G[0] <= accMicroGT)
+                                    & (accMicroGT <= roiMLE_G[1])]
+        mean_roiMicroGII = np.sum(roi_accMicroGII) / len(roi_accMicroGII)
+
+        mean_roiMicroGT = np.sum(roi_accMicroGT) / len(roi_accMicroGT)
+
+        roihMicroR = hMicroR[roiMLE_R[0]:roiMLE_R[1]]
+
+        roihMicroRII = hMicroRII[roiMLE_R[0]:roiMLE_R[1]]
+        roihMicroRT = hMicroRT[roiMLE_R[0]:roiMLE_R[1]]
+
+        roi_accMicroRII = accMicroRII[(roiMLE_R[0] <= accMicroRII)
+                                      & (accMicroRII <= roiMLE_R[1])]
+        roi_accMicroRT = accMicroRT[(roiMLE_R[0] <= accMicroRT)
+                                    & (accMicroRT <= roiMLE_R[1])]
+
+        mean_roiMicroRII = np.sum(roi_accMicroRII) / len(roi_accMicroRII)
+
+        mean_roiMicroRT = np.sum(roi_accMicroRT) / len(roi_accMicroRT)
+
+        # Def. conditions while differentiating GREEN (G) RED (R) and PRALLEL (II) + PERPENDICULAR (T)
+        # for each case
+
+        if any(roihMicroGII):
+            tauArrD_II[i] = LifeMLE(newIRF_G_II, meanIRFG_II, roihMicroGII, mean_roiMicroGII, dtBin, boolFLA)
+        else:
+            tauArrD_II[i] = 0
+        if any(roihMicroGT):
+            tauArrD_T[i] = LifeMLE(newIRF_G_T, meanIRFG_T, roihMicroGT, mean_roiMicroGT, dtBin, boolFLA)
+        else:
+            tauArrD_T[i] = 0
+
+        if any(roihMicroRII):
+            tauArrA_II[i] = LifeMLE(newIRF_R_II, meanIRFR_II, roihMicroRII, mean_roiMicroRII, dtBin, boolFLA)
+        else:
+            tauArrA_II[i] = 0
+        if any(roihMicroRT):
+            tauArrA_T[i] = LifeMLE(newIRF_R_T, meanIRFR_T, roihMicroRT, mean_roiMicroRT, dtBin, boolFLA)
+        else:
+            tauArrA_T[i] = 0
+
+    BurstData = np.array([(lastBN + np.arange(len(NG)) + 1).tolist(),
+                          [el[0] for el in NG],
+                          [el[0] for el in NGII],
+                          [el[0] for el in NGT],
+                          [el[0] for el in NR],
+                          [el[0] for el in NRII],
+                          [el[0] for el in NRT],
+                          [el[0] for el in NR0],
+                          [el[0] for el in NR0II],
+                          [el[0] for el in NR0T],
+                          (np.ones(len(NG)) * BGII).tolist(),
+                          (np.ones(len(NG)) * BGT).tolist(),
+                          (np.ones(len(NG)) * BRII).tolist(),
+                          (np.ones(len(NG)) * BRT).tolist(),
+                          (np.ones(len(NG)) * BR0II).tolist(),
+                          (np.ones(len(NG)) * BR0T).tolist(),
+                          [el[0] for el in TBurst],
+                          [el[0] for el in arrFRET_2CDE],
+                          [el[0] for el in arrAlex_2CDE],
+                          [el[0] for el in dtGR_TR0],
+                          tauArrD_II,
+                          tauArrD_T,
+                          tauArrA_II,
+                          tauArrA_T,
+                          [el[0] for el in TGR]]).T
+
+
+    return BurstData
 def save_burst_data(pathname, suffix, BurstData, boolPostA):
     """ Save burst data to a binary file. """
     fileB = Path(pathname) / f'BData{suffix}.bin'
@@ -467,7 +756,7 @@ def burst_fun(folder, ht3_locations, suffix, Brd_GGR,Brd_RR, threIT,threITN, min
             fileName = file.split('\\')[-1]
             folderName = '/'.join(file.split('\\')[0:-1])
 
-            BurstData = getBurstAllIntensity(fileName, folderName, suffix, lastBN, Brd_GGR, Brd_RR, threIT, \
+            BurstData = getBurstAll(fileName, folderName, suffix, lastBN, Brd_GGR, Brd_RR, threIT, \
                                     threITN, minPhs, 10, newIRF_G_II, newIRF_G_T, meanIRFG_II, meanIRFG_T, \
                                     newIRF_R_II, newIRF_R_T, meanIRFR_II, meanIRFR_T, Brd_GGR, Brd_RR, dtBin, setLeeFilter, \
                                     boolFLA, boolTotal, minGR, minR0, boolPostA, checkInner, tauFRET, tauALEX)
@@ -572,7 +861,7 @@ if __name__ == '__main__':
               IRF_R_T=sample_data[12], meanIRFR_II=sample_data[13], meanIRFR_T=sample_data[14], dtBin=sample_data[15],
               setLeeFilter=sample_data[16], boolFLA=sample_data[17], boolTotal=sample_data[18], minGR=sample_data[19],
               minR0=sample_data[20], boolPostA=sample_data[21], tauFRET=sample_data[22], tauALEX=sample_data[23],
-              settings=sample_data[24], threads=1, )
+              settings=sample_data[24], threads=1)
 
     '''getBurstAll(filename=list(sample_data[0].keys())[0], pathname=sample_data[0], suffix, lastBN, roiRG, roiR0, threIT, threIT2, minPhs, threAveT, newIRF_G_II, \
                 newIRF_G_T, meanIRFG_II, meanIRFG_T, newIRF_R_II, newIRF_R_T, meanIRFR_II, meanIRFR_T, roiMLE_G, \

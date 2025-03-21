@@ -534,7 +534,7 @@ def getBurstAll(filename, pathname, suffix, lastBN, roiRG, roiR0, threIT, threIT
         tauArrA_II = np.zeros(len(accBIndex))
         tauArrA_T = np.zeros(len(accBIndex))
 
-        edges = np.arange(1, 4097)
+        #edges = np.arange(1, 4097)
 
         accBursts = np.zeros([np.sum(np.isin(Bursts[:,0],accBIndex+1)),4])
         actIndex = 0
