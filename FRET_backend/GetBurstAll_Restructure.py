@@ -195,7 +195,7 @@ def getBurstAll(filename, pathname, suffix, lastBN, roiRG, roiR0, threIT, threIT
 
     elif method == 'intensity_based':
         BurstBackIDXs = detect_bursts_intensity_based(
-            Photons, minPhs, minGR, edges
+            Photons, minPhs, minGR, minR0, edges
         )
         # Todo: Get flags from GUI to decide which bursts and background IDX to take (all vs. donor vs. acceptor)
         #  for testing using only idx from all and naming convention from time based method
@@ -296,7 +296,7 @@ def detect_bursts_time_based(PhotonsSGR0, Photons_Raw, threIT, threIT2, minPhs, 
 
     return bStartLong, bLengthLong, bStartLongN, bLengthLongN
 
-def detect_bursts_intensity_based(Photons, minPhs, minGR, edges):
+def detect_bursts_intensity_based(Photons, minPhs, minGR, minR0, edges):
     """Burst detection using intensity thresholding, returning burst indices and background."""
 
     # Keep only real data (channels 1–4)
@@ -317,7 +317,7 @@ def detect_bursts_intensity_based(Photons, minPhs, minGR, edges):
     valid_bins_1_3 = np.where(Bins_1_3[0] >= minGR)[0]
 
     Bins_2_4 = histc(subarray_2_4[:, 1], edges)
-    valid_bins_2_4 = np.where(Bins_2_4[0] >= minGR)[0]
+    valid_bins_2_4 = np.where(Bins_2_4[0] >= minR0)[0]
 
     # ---- Burst Detection ---- #
 
@@ -335,7 +335,7 @@ def detect_bursts_intensity_based(Photons, minPhs, minGR, edges):
     background_bins_1_3 = np.where(Bins_1_3[0] < minGR)[0]
     bStartN_1_3, bLengthN_1_3 = burstLoc(background_bins_1_3, 1)
 
-    background_bins_2_4 = np.where(Bins_2_4[0] < minGR)[0]
+    background_bins_2_4 = np.where(Bins_2_4[0] < minR0)[0]
     bStartN_2_4, bLengthN_2_4 = burstLoc(background_bins_2_4, 1)
 
     return {'TotalBurstIDX': [bStart, bLength],
