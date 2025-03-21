@@ -171,7 +171,7 @@ from pathlib import Path
 def getBurstAll(filename, pathname, suffix, lastBN, roiRG, roiR0, threIT, threIT2, minPhs, threAveT,
                 newIRF_G_II, newIRF_G_T, meanIRFG_II, meanIRFG_T, newIRF_R_II, newIRF_R_T,
                 meanIRFR_II, meanIRFR_T, roiMLE_G, roiMLE_R, dtBin, setLeeFilter, boolFLA, boolTotal,
-                minGR, minR0, boolPostA, checkInner, tauFRET, tauALEX, method='time_based'):
+                minGR, minR0, boolPostA, checkInner, tauFRET, tauALEX, method='intensity_based'):
     """
     Process photon burst data using either time-based or intensity-based thresholding.
 
@@ -193,12 +193,15 @@ def getBurstAll(filename, pathname, suffix, lastBN, roiRG, roiR0, threIT, threIT
             PhotonsSGR0, Photons_Raw, threIT, threIT2, minPhs, checkInner, boolTotal, setLeeFilter, edges
         )
 
-    #Todo: Adapt naming to -> bStartLong, bLengthLong, bStartLongN, bLengthLongN which are extensions in time filter
-    #and probably same as bStart as is in the intensity case
     elif method == 'intensity_based':
-        bStart, bLength, bStart_1_3, bLength_1_3, bStart_2_4, bLength_2_4, bStartN, bLengthN = detect_bursts_intensity_based(
+        BurstBackIDXs = detect_bursts_intensity_based(
             Photons, minPhs, minGR, edges
         )
+        # Todo: Get flags from GUI to decide which bursts and background IDX to take (all vs. donor vs. acceptor)
+        #  for testing using only idx from all and naming convention from time based method
+        bStartLong, bLengthLong = BurstBackIDXs['TotalBurstIDX']
+        bStartLongN, bLengthLongN = BurstBackIDXs['TotalBackgroundIDX']
+
     else:
         raise ValueError("Invalid method. Choose 'time_based' or 'intensity_based'.")
 
@@ -329,12 +332,19 @@ def detect_bursts_intensity_based(Photons, minPhs, minGR, edges):
     background_bins = np.where(BinsSGR0[0] < minPhs)[0]
     bStartN, bLengthN = burstLoc(background_bins, 1)
 
-    return (
-        bStart, bLength,  # Total burst indices
-        bStart_1_3, bLength_1_3,  # Donor channel bursts
-        bStart_2_4, bLength_2_4,  # Acceptor channel bursts
-        bStartN, bLengthN  # Background burst indices
-    )
+    background_bins_1_3 = np.where(Bins_1_3[0] < minGR)[0]
+    bStartN_1_3, bLengthN_1_3 = burstLoc(background_bins_1_3, 1)
+
+    background_bins_2_4 = np.where(Bins_2_4[0] < minGR)[0]
+    bStartN_2_4, bLengthN_2_4 = burstLoc(background_bins_2_4, 1)
+
+    return {'TotalBurstIDX': [bStart, bLength],
+            'DonorBurstIDX': [bStart_1_3, bLength_1_3],
+            'AcceptorBurstIDX': [bStart_2_4, bLength_2_4],
+            'TotalBackgroundIDX': [bStartN, bLengthN],
+            'DonorBackgroundIDX': [bStartN_1_3, bLengthN_1_3],
+            'AcceptorBackgroundIDX': [bStartN_2_4, bLengthN_2_4]
+        }
 
 def process_bursts(PhotonsSGR0, Photons_Raw, bStartLong, bLengthLong,  edges, pathname):
     """Process bursts and compute histograms, background rates, and save results."""
