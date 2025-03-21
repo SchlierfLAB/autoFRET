@@ -448,7 +448,7 @@ def compute_background(pathname, PhotonsSGR0, bStartLongN, bLengthLongN, roiRG, 
         background_data.item().get('backHIST')[:,1] += hGapPhGT
         background_data.item().get('time')[0] += BackT / 1e9
 
-    np.save("backHIST.npy", background_data)
+    np.save(strHIST, background_data)
 
     if BackT:
         BGII = BackNGII / BackT * 1e9
