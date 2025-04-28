@@ -2,8 +2,8 @@
 import os
 import pickle
 
-from FRET_backend.BatUi import Ui_MainWindow
-from FRET_backend.GetBurstAllMultiprocessing import par_burst, get_files, check_for_bdata_files
+from FRET_backend.BatUi_Rework import Ui_MainWindow
+from FRET_backend.GetBurstAll_Restructure import par_burst, get_files, check_for_bdata_files
 from FRET_backend.BatFileDIalog import File_DD_Dialog
 from FRET_backend.BatOverriteFilesDialog import ask_override_files
 
@@ -90,6 +90,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.minTotalTick.clicked.connect(self.tick_switch)
         self.grBox.setDisabled(True)
         self.r0Box.setDisabled(True)
+
+        # get burst detect method
 
         self.data_in = False
 
@@ -825,12 +827,25 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         else:
             print(f'Run with {multiprocessing.cpu_count() + (self.numCores+1)} workers')
 
+        # get burst method
+        # ["Time-Based", "Intensity-Based" (with thresholds)]
+
+        if self.burst_method == "Time-Based":
+            thresh_based = False
+        elif self.burst_method == "Intensity-Based":
+            thresh_based = True
+        else:
+            print('Selected method not available')
+            return
+
+        print(f'\nSelected detection method: {self.burst_method}')
+
         start = time.time()
 
 
         par_burst(eval_folder, self.suffix, self.Brd_GGR, self.Brd_RR, self.threIT, self.threITN, self.minPhs, self.newIRF_G_II, self.newIRF_G_T,
                   meanIRFG_II, meanIRFG_T, self.newIRF_R_II, self.newIRF_R_T, meanIRFR_II, meanIRFR_T, self.dtBin, self.setLeeFilter, self.boolFLA,
-                  self.boolTotal, self.minGR, self.minR0, self.boolPostA, self.tauFRET, self.tauALEX, self.settings_dict, workers)
+                  self.boolTotal, self.minGR, self.minR0, self.boolPostA, self.tauFRET, self.tauALEX, self.settings_dict, thresh_based, workers)
 
 
         print(f'\n\nTook {time.time()-start} seconds to analyze')
@@ -885,6 +900,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.boolPostA = self.postAnaCheckbox.isChecked()
         self.boolTotal = self.minTotalTick.isChecked()
         self.thirty_thirty = self.thirtythirtyCheck.isChecked()
+
+        # get selected burst method
+        self.burst_method = self.method_select.currentText()
+
+
 
 
     def get_settings_dict(self):

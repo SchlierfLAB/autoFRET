@@ -190,12 +190,12 @@ def getBurstAll(filename, pathname, suffix, lastBN, roiRG, roiR0, threIT, threIT
     # Detect bursts with the selected method
     if method == 'time_based':
         bStartLong, bLengthLong, bStartLongN, bLengthLongN = detect_bursts_time_based(
-            PhotonsSGR0, Photons_Raw, threIT, threIT2, minPhs, checkInner, boolTotal, setLeeFilter, edges
+            PhotonsSGR0, threIT, threIT2, minPhs, checkInner, boolTotal, setLeeFilter
         )
 
     elif method == 'intensity_based':
         BurstBackIDXs = detect_bursts_intensity_based(
-            Photons, minPhs, minGR, minR0, edges
+        PhotonsSGR0, minPhs, minGR, minR0, edges
         )
         # Todo: Get flags from GUI to decide which bursts and background IDX to take (all vs. donor vs. acceptor)
         #  for testing using only idx from all and naming convention from time based method
@@ -221,13 +221,13 @@ def getBurstAll(filename, pathname, suffix, lastBN, roiRG, roiR0, threIT, threIT
     seperated_photons = seperate_photons(PhotonsSGR0, Bursts['Bursts'], bLengthLong, bStartLong, roiRG, roiR0, tauFRET, tauALEX)
 
     # Compute burst statistics (FRET, ALEX, lifetimes) and add everything to final output matrix for saving
-    output_mat = compute_final_statistic(Bursts['Bursts'], seperated_photons, boolTotal, threAveT, minGR, minR0, roiR0, roiMLE_G, roiMLE_R,
+    output_mat, accBursts = compute_final_statistic(Bursts['Bursts'], seperated_photons, boolTotal, threAveT, minGR, minR0, roiR0, roiMLE_G, roiMLE_R,
                             newIRF_G_II, meanIRFG_II, newIRF_G_T, meanIRFG_T, newIRF_R_II, meanIRFR_II, newIRF_R_T,
                             meanIRFR_T, dtBin, boolFLA, Background, edges, lastBN)
 
 
     # Save burst data
-    save_burst_data(pathname, suffix, output_mat, boolPostA)
+    save_burst_data(pathname, suffix, output_mat, boolPostA, accBursts)
 
     return output_mat
 
@@ -240,13 +240,13 @@ def load_photon_data(pathname, filename, roiRG, roiR0, return_raw=False):
     Photons_Raw = file_instance.RawData
 
     # Filter photons by valid regions
-    Photons = Photons_Raw[(Photons_Raw[:, 0] != 15) & (
-            (Photons_Raw[:, 1] >= roiRG[0]) & (Photons_Raw[:, 1] <= roiRG[1]) |
-            (Photons_Raw[:, 1] >= roiR0[0]) & (Photons_Raw[:, 1] <= roiR0[1]))]
+    Photons =Photons_Raw[(Photons_Raw[:, 0] != 15) &
+                         ((Photons_Raw[:, 1] >= roiRG[0]) &
+                          (Photons_Raw[:, 1] <= roiRG[1]) |
+                          ((Photons_Raw[:, 1] >= roiR0[0]) & (Photons_Raw[:,1] <= roiR0[1])))]
 
     # keep just real data and seperate them in channels
-    PhotonsSGR0 = Photons[(Photons[:, 0] == 1) | (Photons[:, 0] == 2) | (Photons[:, 0] == 3) | (Photons[:, 0] == 4),
-                  0:3]
+    PhotonsSGR0 =Photons[(Photons[:,0]==1) | (Photons[:,0]==2) | (Photons[:,0]==3) | (Photons[:,0]==4), 0:3]
 
     if return_raw:
         return Photons, Photons_Raw, PhotonsSGR0
@@ -254,7 +254,7 @@ def load_photon_data(pathname, filename, roiRG, roiR0, return_raw=False):
         return Photons, PhotonsSGR0
 
 
-def detect_bursts_time_based(PhotonsSGR0, Photons_Raw, threIT, threIT2, minPhs, checkInner, boolTotal, setLeeFilter, edges):
+def detect_bursts_time_based(PhotonsSGR0, threIT, threIT2, minPhs, checkInner, boolTotal, setLeeFilter):
     """Burst detection based on inter-photon time filtering."""
 
     # Extract inter-photon times and apply Lee Filter
@@ -296,11 +296,9 @@ def detect_bursts_time_based(PhotonsSGR0, Photons_Raw, threIT, threIT2, minPhs, 
 
     return bStartLong, bLengthLong, bStartLongN, bLengthLongN
 
-def detect_bursts_intensity_based(Photons, minPhs, minGR, minR0, edges):
+def detect_bursts_intensity_based(PhotonsSGR0,minPhs, minGR, minR0, edges):
     """Burst detection using intensity thresholding, returning burst indices and background."""
 
-    # Keep only real data (channels 1–4)
-    PhotonsSGR0 = Photons[np.isin(Photons[:, 0], [1, 2, 3, 4]), 0:3]
 
     # Separate Donor (SGR) and Acceptor (R0) Channels
     subarray_1_3 = PhotonsSGR0[np.isin(PhotonsSGR0[:, 0], [1, 3])]  # Donor (SGR)
@@ -356,20 +354,20 @@ def process_bursts(PhotonsSGR0, Photons_Raw, bStartLong, bLengthLong,  edges, pa
     Bursts = np.zeros([int(np.sum(bLengthLong)), 4])
     lInd = 0
 
-    for i in range(len(bStartLong)):
-        Bursts[lInd:lInd + int(bLengthLong[i]), :] = np.c_[
-            np.ones(int(bLengthLong[i])) * (i + 1),
-            PhotonsSGR0[int(bStartLong[i]) + 1: int(bStartLong[i]) + int(bLengthLong[i]) + 1, 0:4]
-        ]
-        lInd += int(bLengthLong[i])
-
-    # ---- Compute Photon Histograms ---- #
 
     # channel histogram
     strAllHIST = pathname + '/allHIST.npy'
     dataAll = np.load(strAllHIST, allow_pickle=True)
 
     for i in range(len(bStartLong)):
+        Bursts[lInd:lInd + int(bLengthLong[i]), :] = np.c_[np.ones(int(bLengthLong[i])).T * (i + 1),
+                                                           PhotonsSGR0[int(bStartLong[i]) + 1:int(bStartLong[i]) +
+                                                                                              int(bLengthLong[i]) + 1,
+                                                           0:4]]
+        lInd += int(bLengthLong[i])
+
+    # ---- Compute Photon Histograms ---- #
+
         hAll, _ = histc(
             Photons_Raw[
                 (Photons_Raw[:, 0] != 15) & ((Photons_Raw[:, 0] == 1) | (Photons_Raw[:, 0] == 3)) &
@@ -392,8 +390,6 @@ def process_bursts(PhotonsSGR0, Photons_Raw, bStartLong, bLengthLong,  edges, pa
             edges
         )
         dataAll.item().get('photonHIST')[:,1] += hAll
-
-    strAllHIST = pathname + '/allHIST.npy'
 
     # channel background histogram and background counts
     np.save(strAllHIST, dataAll)
@@ -708,17 +704,24 @@ def compute_final_statistic(Bursts, seperate_photons, boolTotal, threAveT, minGR
                           [el[0] for el in TGR]]).T
 
 
-    return BurstData
-def save_burst_data(pathname, suffix, BurstData, boolPostA):
+    return BurstData, accBursts
+def save_burst_data(pathname, suffix, BurstData, boolPostA, accBursts):
     """ Save burst data to a binary file. """
-    fileB = Path(pathname) / f'BData{suffix}.bin'
-    with fileB.open('ab') as f:
+    fileB = pathname + '/' + 'BData' + str(suffix)+'.bin'
+    with Path(fileB).open('ab') as f:
         np.save(f, BurstData, allow_pickle=True)
 
     if boolPostA:
-        fileP = Path(pathname) / f'PData{suffix}.bin'
-        with fileP.open('ab') as f:
-            np.save(f, BurstData, allow_pickle=True)
+        # save data to file
+        # Major compatibility can occure because Matlap -> Column Major and Python -> Row Major
+        # https://scottstaniewicz.com/articles/python-matlab-binary/ --> For Matlab python comparison
+        fileP = pathname + '/' + 'PData' + str(suffix) + '.bin'
+
+        # append to the single file
+        # https://stackoverflow.com/questions/30376581/save-numpy-array-in-append-mode
+
+        with Path(fileP).open('ab') as f:
+            np.save(f, accBursts, allow_pickle=True)
 
 def burst_fun(folder, ht3_locations, suffix, Brd_GGR,Brd_RR, threIT,threITN, minPhs, newIRF_G_II, newIRF_G_T, meanIRFG_II, meanIRFG_T,\
               newIRF_R_II, newIRF_R_T,  meanIRFR_II, meanIRFR_T, dtBin, setLeeFilter, boolFLA,boolTotal ,minGR ,minR0, \
@@ -748,8 +751,17 @@ def burst_fun(folder, ht3_locations, suffix, Brd_GGR,Brd_RR, threIT,threITN, min
 
     lastBN = 0
 
-    if not threshold_burst_detect:
-        for file in ht3_locations[folder]:#ht3_file_fps:
+    # decide on method
+    if threshold_burst_detect:
+        method = 'intensity_based'
+    elif not threshold_burst_detect:
+        method = 'time_based'
+    else:
+        print('Selected method not implemented')
+        return
+
+
+    for file in ht3_locations[folder]:
 
             file = file.translate(str.maketrans({'/': '\\'}))
             fileName = file.split('\\')[-1]
@@ -758,22 +770,10 @@ def burst_fun(folder, ht3_locations, suffix, Brd_GGR,Brd_RR, threIT,threITN, min
             BurstData = getBurstAll(fileName, folderName, suffix, lastBN, Brd_GGR, Brd_RR, threIT,\
                                     threITN, minPhs, 10, newIRF_G_II, newIRF_G_T, meanIRFG_II, meanIRFG_T,\
                                     newIRF_R_II, newIRF_R_T, meanIRFR_II, meanIRFR_T, Brd_GGR, Brd_RR, dtBin,setLeeFilter,\
-                                    boolFLA, boolTotal,minGR,minR0, boolPostA, checkInner, tauFRET, tauALEX)
+                                    boolFLA, boolTotal,minGR,minR0, boolPostA, checkInner, tauFRET, tauALEX, method)
 
             lastBN += len(BurstData)
         #ht3_file_fps.update()
-    elif threshold_burst_detect:
-        for file in ht3_locations[folder]:  # ht3_file_fps:
-            file = file.translate(str.maketrans({'/': '\\'}))
-            fileName = file.split('\\')[-1]
-            folderName = '/'.join(file.split('\\')[0:-1])
-
-            BurstData = getBurstAll(fileName, folderName, suffix, lastBN, Brd_GGR, Brd_RR, threIT, \
-                                    threITN, minPhs, 10, newIRF_G_II, newIRF_G_T, meanIRFG_II, meanIRFG_T, \
-                                    newIRF_R_II, newIRF_R_T, meanIRFR_II, meanIRFR_T, Brd_GGR, Brd_RR, dtBin, setLeeFilter, \
-                                    boolFLA, boolTotal, minGR, minR0, boolPostA, checkInner, tauFRET, tauALEX)
-
-            #lastBN += len(BurstData)
 
 
 
@@ -841,7 +841,7 @@ def tqdm_joblib(tqdm_object):
 
 def par_burst(eval_folder, suffix, Brd_GGR, Brd_RR, threIT, threIT2, minPhs, IRF_G_II, IRF_G_T, meanIRFG_II,\
               meanIRFG_T, IRF_R_II, IRF_R_T, meanIRFR_II, meanIRFR_T, dtBin, setLeeFilter, boolFLA, boolTotal, minGR,\
-              minR0, boolPostA, tauFRET, tauALEX, settings, threads=-2):
+              minR0, boolPostA, tauFRET, tauALEX, settings, thresh_burst_detect=False, threads=-2):
 
 
     #start_multi_run = time.time()
@@ -852,7 +852,7 @@ def par_burst(eval_folder, suffix, Brd_GGR, Brd_RR, threIT, threIT2, minPhs, IRF
                                                                        IRF_R_T, meanIRFR_II,meanIRFR_T, \
                                                                        dtBin, setLeeFilter, boolFLA, \
                                                                        boolTotal, minGR, minR0, boolPostA, tauFRET, tauALEX, settings,
-                                                                       True)\
+                                                                       thresh_burst_detect)\
                                                     for folder in eval_folder.keys())
 
     #print(f'Multi thread run with {threads} threads took: ', time.time() - start_multi_run)
@@ -871,7 +871,7 @@ if __name__ == '__main__':
               IRF_R_T=sample_data[12], meanIRFR_II=sample_data[13], meanIRFR_T=sample_data[14], dtBin=sample_data[15],
               setLeeFilter=sample_data[16], boolFLA=sample_data[17], boolTotal=sample_data[18], minGR=sample_data[19],
               minR0=sample_data[20], boolPostA=sample_data[21], tauFRET=sample_data[22], tauALEX=sample_data[23],
-              settings=sample_data[24], threads=1)
+              settings=sample_data[24], thresh_burst_detect=False, threads=1)
 
     '''getBurstAll(filename=list(sample_data[0].keys())[0], pathname=sample_data[0], suffix, lastBN, roiRG, roiR0, threIT, threIT2, minPhs, threAveT, newIRF_G_II, \
                 newIRF_G_T, meanIRFG_II, meanIRFG_T, newIRF_R_II, newIRF_R_T, meanIRFR_II, meanIRFR_T, roiMLE_G, \
