@@ -2,10 +2,9 @@
 import os
 import pickle
 
-from FRET_backend.BatUi_Rework import Ui_MainWindow
-from FRET_backend.GetBurstAll_Restructure import par_burst, get_files, check_for_bdata_files
+from FRET_backend.BatUi import Ui_MainWindow
+from FRET_backend.GetBurstAllMultiprocessing import par_burst, get_files, check_for_bdata_files
 from FRET_backend.BatFileDIalog import File_DD_Dialog
-from FRET_backend.ChannelSelectWindow import ChannelSelectionWindow
 from FRET_backend.BatOverriteFilesDialog import ask_override_files
 
 from FRET_backend.Read_PTU_Obj import Read_PTU
@@ -92,8 +91,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.grBox.setDisabled(True)
         self.r0Box.setDisabled(True)
 
-        # get burst detect method
-
         self.data_in = False
 
         # well thats defined for some reason :D
@@ -149,14 +146,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         '''
 
-        ## Channel selection ##
-        channel_dialog = ChannelSelectionWindow(self)
-        if channel_dialog.exec_() == QDialog.Accepted:
-            self.channel_remap = channel_dialog.channel_mapping
-        else:
-            return  # User cancelled
-
-        print(self.channel_remap)
         ## Start file grabbing ##
 
         self.drag_drop_files.exec_()
@@ -200,7 +189,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         ## Start Readout ##
 
         try:
-            file_instance = Read_PTU(self.ht3file, self.channel_remap)
+            file_instance = Read_PTU(self.ht3file)
             file_instance.further_process()
             self.Data = file_instance.all_out
             #self.Data = read_ht3_raw(self.ht3file)
@@ -208,7 +197,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.RawInt = self.Data['RawInt']
             self.repRate = self.Data['SyncRate']
             self.dtBin = self.Data['varout4']
-
 
         except (IndexError, FileNotFoundError):
             print('Error no ht3 data given')
@@ -298,7 +286,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         # split PARALLEL (II) and PERPENDICULAR (T)
 
 
-        # GREEN (G) part -> Donor
+        # GREEN (G) part
         self.IRF_G_II = IRF_AllG[1]
         self.IRF_G_T = IRF_AllG[3]
 
@@ -311,7 +299,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.normIRF_G_II = self.IRF_G_II / max(self.IRF_G_II) * self.maxhG_II
         self.normIRF_G_T = self.IRF_G_T / max(self.IRF_G_T) * self.maxhG_T
 
-        # RED (R) part -> Acceptor
+        # RED (R) part
         self.IRF_R_II = IRF_AllR[0]
         self.IRF_R_T = IRF_AllR[2]
 
@@ -797,7 +785,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.get_settings_dict()
 
         if IRF_calcs:
-            #Todo:
+            #Todo: Check if statement since code will break for IRF_calcs -> False
+            # obtain average IRF shift -> This is now actually required for the script to work
             meanIRFG = (np.sum(np.arange(1, len(self.newIRF_G) + 1, 1) * self.newIRF_G) / np.sum(self.newIRF_G) +
                         self.Brd_GGR[0]) * self.dtBin / 1000
 
@@ -836,25 +825,12 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         else:
             print(f'Run with {multiprocessing.cpu_count() + (self.numCores+1)} workers')
 
-        # get burst method
-        # ["Time-Based", "Intensity-Based" (with thresholds)]
-
-        if self.burst_method == "Time-Based":
-            thresh_based = False
-        elif self.burst_method == "Intensity-Based":
-            thresh_based = True
-        else:
-            print('Selected method not available')
-            return
-
-        print(f'\nSelected detection method: {self.burst_method}')
-
         start = time.time()
 
 
         par_burst(eval_folder, self.suffix, self.Brd_GGR, self.Brd_RR, self.threIT, self.threITN, self.minPhs, self.newIRF_G_II, self.newIRF_G_T,
                   meanIRFG_II, meanIRFG_T, self.newIRF_R_II, self.newIRF_R_T, meanIRFR_II, meanIRFR_T, self.dtBin, self.setLeeFilter, self.boolFLA,
-                  self.boolTotal, self.minGR, self.minR0, self.boolPostA, self.tauFRET, self.tauALEX, self.settings_dict, thresh_based, self.channel_remap, workers)
+                  self.boolTotal, self.minGR, self.minR0, self.boolPostA, self.tauFRET, self.tauALEX, self.settings_dict, workers)
 
 
         print(f'\n\nTook {time.time()-start} seconds to analyze')
@@ -909,11 +885,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.boolPostA = self.postAnaCheckbox.isChecked()
         self.boolTotal = self.minTotalTick.isChecked()
         self.thirty_thirty = self.thirtythirtyCheck.isChecked()
-
-        # get selected burst method
-        self.burst_method = self.method_select.currentText()
-
-
 
 
     def get_settings_dict(self):

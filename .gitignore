@@ -21,6 +21,7 @@ FRET_backend/GetBurstAllMultiprocessing.py
 Test_Data/*
 Test_Data
 Read_PTU/*
+Read_HDF5/*
 
 
 
