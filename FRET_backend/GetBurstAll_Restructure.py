@@ -194,12 +194,10 @@ def getBurstAll(filename, pathname, suffix, lastBN, roiRG, roiR0, threIT, threIT
         )
 
     elif method == 'intensity_based':
-        # Todo: Add bool total for all vs. channel based filter
         BurstBackIDXs = detect_bursts_intensity_based(
-        PhotonsSGR0, minPhs, minGR, minR0, edges
+        PhotonsSGR0, minPhs, minGR, minR0, edges, boolTotal
         )
-        # Todo: Get flags from GUI to decide which bursts and background IDX to take (all vs. donor vs. acceptor)
-        #  for testing using only idx from all and naming convention from time based method
+
         bStartLong, bLengthLong = BurstBackIDXs['TotalBurstIDX']
         bStartLongN, bLengthLongN = BurstBackIDXs['TotalBackgroundIDX']
 
@@ -297,57 +295,61 @@ def detect_bursts_time_based(PhotonsSGR0, threIT, threIT2, minPhs, checkInner, b
 
     return bStartLong, bLengthLong, bStartLongN, bLengthLongN
 
-def detect_bursts_intensity_based(PhotonsSGR0, minPhs, minGR, minR0, edges):
+def detect_bursts_intensity_based(PhotonsSGR0, minPhs, minGR, minR0, edges, total_filter):
     """Burst detection using intensity thresholding, returning burst indices and background."""
 
+    if total_filter:
+        # Bin total intensity (all channels)
 
-    # Separate Donor (SGR) and Acceptor (R0) Channels
-    subarray_1_3 = PhotonsSGR0[np.isin(PhotonsSGR0[:, 0], [1, 3])]  # Donor (SGR)
-    subarray_2_4 = PhotonsSGR0[np.isin(PhotonsSGR0[:, 0], [2, 4])]  # Acceptor (R0)
+        ## Compute valid bins
+        BinsSGR0 = histc(PhotonsSGR0[:, 1], edges)
+        valid_bins = np.where(BinsSGR0[0] >= minPhs)[0]
 
-    # ---- Intensity Binning ---- #
+        # get burst positions
+        bStart, bLength = burstLoc(valid_bins, 1)
 
-    # Bin total intensity (all channels)
-    BinsSGR0 = histc(PhotonsSGR0[:, 1], edges)
-    valid_bins = np.where(BinsSGR0[0] >= minPhs)[0]
+        ## compute background
 
-    # Bin donor (1 & 3) and acceptor (2 & 4) separately
-    Bins_1_3 = histc(subarray_1_3[:, 1], edges)
-    valid_bins_1_3 = np.where(Bins_1_3[0] >= minGR)[0]
+        # Identify background regions (bins below threshold)
+        background_bins = np.where(BinsSGR0[0] < minPhs)[0]
+        bStartN, bLengthN = burstLoc(background_bins, 1)
 
-    Bins_2_4 = histc(subarray_2_4[:, 1], edges)
-    valid_bins_2_4 = np.where(Bins_2_4[0] >= minR0)[0]
+        return {'BurstIDX': [bStart, bLength],
+                'BackgroundIDX': [bStartN, bLengthN]}
 
-    #Todo:
-    #Two opts. either only valid_bins = np.where(BinsSGR0[0] >= minPhs)[0] or valid_bins_1_3 && valid_bins_2_4
-    # --> Chosen from min. Nph bool
+    else:
+        # Filter for seperated donor and acceptor
 
-    # ---- Burst Detection ---- #
+        # Separate Donor (SGR) and Acceptor (R0) Channels
+        subarray_1_3 = PhotonsSGR0[np.isin(PhotonsSGR0[:, 0], [1, 3])]  # Donor (SGR)
+        subarray_2_4 = PhotonsSGR0[np.isin(PhotonsSGR0[:, 0], [2, 4])]  # Acceptor (R0)
 
-    # Find burst indices (total, donor, acceptor)
-    bStart, bLength = burstLoc(valid_bins, 1)
-    bStart_1_3, bLength_1_3 = burstLoc(valid_bins_1_3, 1)
-    bStart_2_4, bLength_2_4 = burstLoc(valid_bins_2_4, 1)
+        # Bin donor (1 & 3) and acceptor (2 & 4) separately
+        Bins_1_3 = histc(subarray_1_3[:, 1], edges)
+        valid_bins_1_3 = np.where(Bins_1_3[0] >= minGR)[0]
 
-    # ---- Background Estimation ---- #
+        Bins_2_4 = histc(subarray_2_4[:, 1], edges)
+        valid_bins_2_4 = np.where(Bins_2_4[0] >= minR0)[0]
 
-    # Identify background regions (bins below threshold)
-    background_bins = np.where(BinsSGR0[0] < minPhs)[0]
-    bStartN, bLengthN = burstLoc(background_bins, 1)
+        valid_bins = valid_bins_1_3 + valid_bins_2_4
 
-    background_bins_1_3 = np.where(Bins_1_3[0] < minGR)[0]
-    bStartN_1_3, bLengthN_1_3 = burstLoc(background_bins_1_3, 1)
+        bStart, bLength = burstLoc(valid_bins, 1)
 
-    background_bins_2_4 = np.where(Bins_2_4[0] < minR0)[0]
-    bStartN_2_4, bLengthN_2_4 = burstLoc(background_bins_2_4, 1)
+        # Compute background
 
-    return {'TotalBurstIDX': [bStart, bLength],
-            'DonorBurstIDX': [bStart_1_3, bLength_1_3],
-            'AcceptorBurstIDX': [bStart_2_4, bLength_2_4],
-            'TotalBackgroundIDX': [bStartN, bLengthN],
-            'DonorBackgroundIDX': [bStartN_1_3, bLengthN_1_3],
-            'AcceptorBackgroundIDX': [bStartN_2_4, bLengthN_2_4]
-        }
+        background_bins_1_3 = np.where(Bins_1_3[0] < minGR)[0]
+
+        background_bins_2_4 = np.where(Bins_2_4[0] < minR0)[0]
+
+        background_bins = background_bins_1_3 + background_bins_2_4
+
+        bStartN, bLengthN = burstLoc(background_bins, 1)
+
+        return {'BurstIDX': [bStart, bLength],
+                'BackgroundIDX': [bStartN, bLengthN]}
+
+
+
 
 def process_bursts(PhotonsSGR0, Photons_Raw, bStartLong, bLengthLong,  edges, pathname):
     """Process bursts and compute histograms, background rates, and save results."""
