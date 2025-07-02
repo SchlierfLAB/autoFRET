@@ -171,7 +171,7 @@ from pathlib import Path
 def getBurstAll(filename, pathname, suffix, lastBN, roiRG, roiR0, threIT, threIT2, minPhs, threAveT,
                 newIRF_G_II, newIRF_G_T, meanIRFG_II, meanIRFG_T, newIRF_R_II, newIRF_R_T,
                 meanIRFR_II, meanIRFR_T, roiMLE_G, roiMLE_R, dtBin, setLeeFilter, boolFLA, boolTotal,
-                minGR, minR0, boolPostA, checkInner, tauFRET, tauALEX, method='intensity_based'):
+                minGR, minR0, boolPostA, checkInner, tauFRET, tauALEX, method='intensity_based', channel_remap=None):
     """
     Process photon burst data using either time-based or intensity-based thresholding.
 
@@ -182,7 +182,8 @@ def getBurstAll(filename, pathname, suffix, lastBN, roiRG, roiR0, threIT, threIT
     """
 
     # Load and preprocess photon data
-    Photons, Photons_Raw, PhotonsSGR0 = load_photon_data(pathname, filename, roiRG, roiR0, return_raw=True, channel_remap=None)
+    Photons, Photons_Raw, PhotonsSGR0 = load_photon_data(pathname, filename, roiRG, roiR0, return_raw=True,
+                                                         channel_remap=channel_remap)
 
     # Define binning range for intensity-based method
     edges = np.arange(1, 4097, 1)  # 1 ms binning

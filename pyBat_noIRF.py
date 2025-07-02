@@ -169,21 +169,16 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             return
 
         self.data_dir = os.path.dirname(os.path.dirname(file_dict['HT3']))
-
+        print(file_dict)
         # check for empty
         if all(file_dict.values()):
             # if three files are selected
             pass
-        elif not all(file_dict.values()) and any(file_dict.values()):
-            # give an error dialog if the user has selected <3 files (not a heart :D)
-            msg = QMessageBox()
-            msg.setIcon(QMessageBox.Critical)
-            msg.setText("File Selection Incomplete")
-            #msg.setInformativeText("This is additional information")
-            msg.setWindowTitle("Input Error")
-            msg.setDetailedText("Please select a total of three files. One HT3 and two HHD files are required")
-            msg.exec_()
-            return
+        elif file_dict['HT3'] and not file_dict['HHD1'] and not file_dict['HHD2']:
+            print('No correction files provided. Continue with less stats')
+            # Todo: Create a Warning Window!
+            pass
+
         else:
             # if nothing entered it will do nothing.... ha take this user
             return
@@ -236,16 +231,21 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         try:
             self.RHHD_G = read_hhd(self.hhdfileG)
+        except FileNotFoundError:
+            if not self.hhdfileG:
+                self.RHHD_G = [[np.zeros(65536), np.zeros(65536), np.zeros(65536), np.zeros(65536)], 0]
         except IndexError:
             print('No hhdG file')
             return
 
         try:
             self.RHHD_R = read_hhd(self.hhdfileR)
+        except FileNotFoundError:
+            if not self.hhdfileR:
+                self.RHHD_R = [[np.zeros(65536), np.zeros(65536), np.zeros(65536), np.zeros(65536)], 0]
         except IndexError:
             print('No hhdR file')
             return
-
         # Enable GG_GR button when data is there
         if self.RHHD_G and self.RHHD_R:
             self.DD_DA_Button.setDisabled(False)

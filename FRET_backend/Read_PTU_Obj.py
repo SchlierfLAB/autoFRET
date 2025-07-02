@@ -108,18 +108,20 @@ class Read_PTU:
                 self.RawData = self.all_out['RawData']
 
                 # Masks for each value that needs to be changed
-                for key, value in self.channel_remap.items():
-                    mask = self.RawData[:, 0] == key
-                    self.RawData[mask, 0] = value
+                if self.channel_remap:
+                    for key, value in self.channel_remap.items():
+                        mask = self.RawData[:, 0] == key
+                        self.RawData[mask, 0] = value
             else:
                 from FRET_backend.read_ht3_vect import read_ht3_raw
                 self.all_out = read_ht3_raw(inputfilePath, True)
                 self.RawData = self.all_out['RawData']
 
                 # Masks for each value that needs to be changed
-                for key, value in self.channel_remap.items():
-                    mask = self.RawData[:, 0] == key
-                    self.RawData[mask, 0] = value
+                if self.channel_remap:
+                    for key, value in self.channel_remap.items():
+                        mask = self.RawData[:, 0] == key
+                        self.RawData[mask, 0] = value
 
 
 
@@ -226,9 +228,10 @@ class Read_PTU:
 
 
         # Masks for each value that needs to be changed
-        for key, value in self.channel_remap.items():
-            mask = self.RawData[:, 0] == key
-            self.RawData[mask, 0] = value
+        if self.channel_remap:
+            for key, value in self.channel_remap.items():
+                mask = self.RawData[:, 0] == key
+                self.RawData[mask, 0] = value
 
     def readPT2(self):
 
@@ -271,9 +274,10 @@ class Read_PTU:
         self.RawData = np.array(self.RawData)
 
         # Masks for each value that needs to be changed
-        for key, value in self.channel_remap.items():
-            mask = self.RawData[:, 0] == key
-            self.RawData[mask, 0] = value
+        if self.channel_remap:
+            for key, value in self.channel_remap.items():
+                mask = self.RawData[:, 0] == key
+                self.RawData[mask, 0] = value
 
     def readPT3(self):
 
@@ -320,9 +324,10 @@ class Read_PTU:
         self.RawData = np.array(self.RawData)
 
         # Masks for each value that needs to be changed
-        for key, value in self.channel_remap.items():
-            mask = self.RawData[:, 0] == key
-            self.RawData[mask, 0] = value
+        if self.channel_remap:
+            for key, value in self.channel_remap.items():
+                mask = self.RawData[:, 0] == key
+                self.RawData[mask, 0] = value
 
 
     def histc(self, Inp, bin):
@@ -412,16 +417,8 @@ class Read_PTU:
 
 if __name__ == '__main__':
     print('IN Main')
-    inputfile_path = '/Users/philipp/Desktop/Work/SchlierfData/Andi_2C/Andreas_2_Channel_data/test_1.ptu'
+    inputfile_path = '/Users/philipp/Desktop/Work/WHK Schlierf Group/autoFRET_SchliefGroupGit/autoFRET/Test_Data/SimulatedData/5pM_96Well_Intensity/A01/A01_0.ht3'
 
     test_read = Read_PTU(inputfile_path)
 
-    test_read.further_process()
-    Data = test_read.all_out
-
-    RawData = test_read.RawData
-
-    print('\n'*3, RawData)
-
-    subs = RawData[:100]
 

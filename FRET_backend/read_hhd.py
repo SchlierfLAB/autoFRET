@@ -459,7 +459,7 @@ def read_hhd(location):
 
     return RHHD
 if __name__ == '__main__':
-    read_hhd('/Users/philipp/Desktop/Work/SchlierfData/HT3_With_Header/default_000.ht3')
+    read = read_hhd('/Users/philipp/Desktop/Work/WHK Schlierf Group/autoFRET_SchliefGroupGit/autoFRET/Test_Data/IRF_L530_EryB_KI_X.hhd')
 
 
 

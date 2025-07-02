@@ -39,7 +39,7 @@ if __name__ == '__main__':
     print('Deleting .npy, .txt, and .bin files from folder')
 
     #folder_loc = get_parent()
-    folder_loc = '/Users/philipp/Desktop/Work/WHK Schlierf Group/autoFRET_SchliefGroupGit/autoFRET/Test_Data/SimulatedData/5pM_96Well_Time'
+    folder_loc = '/Users/philipp/Desktop/Work/WHK Schlierf Group/autoFRET_SchliefGroupGit/autoFRET/Test_Data/SimulatedData/5pM_96Well_Intensity'
 
     locs = get_locs(folder_loc)
 
