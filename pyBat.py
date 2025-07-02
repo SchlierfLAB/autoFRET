@@ -2,8 +2,8 @@
 import os
 import pickle
 
-from FRET_backend.BatUi_Rework import Ui_MainWindow
-from FRET_backend.GetBurstAll_Restructure import par_burst, get_files, check_for_bdata_files
+from FRET_backend.BatUi import Ui_MainWindow
+from FRET_backend.GetBurstAll import par_burst, get_files, check_for_bdata_files
 from FRET_backend.BatFileDIalog import File_DD_Dialog
 from FRET_backend.ChannelSelectWindow import ChannelSelectionWindow
 from FRET_backend.BatOverriteFilesDialog import ask_override_files
@@ -25,7 +25,7 @@ from PyQt5.QtWidgets import *
 
 
 from FRET_backend.read_hhd import read_hhd
-from FRET_backend.read_ht3_vect import read_ht3_raw, histc
+from FRET_backend.read_ht3_vect import histc
 from FRET_backend.lee_filter import leeFilter
 from FRET_backend.burst_locator import burstLoc
 import time
@@ -213,6 +213,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         except (IndexError, FileNotFoundError):
             print('Error no ht3 data given')
 
+        # Todo: Add user input for bin size
         self.edges2 = np.arange(0,4096,1)
 
         self.hGII=histc(self.RawData[np.equal(self.RawData[:,0], 2)][:,1],self.edges2)[0]
@@ -797,7 +798,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.get_settings_dict()
 
         if IRF_calcs:
-            #Todo:
             meanIRFG = (np.sum(np.arange(1, len(self.newIRF_G) + 1, 1) * self.newIRF_G) / np.sum(self.newIRF_G) +
                         self.Brd_GGR[0]) * self.dtBin / 1000
 

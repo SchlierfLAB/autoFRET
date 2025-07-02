@@ -241,10 +241,10 @@ class Ui_MainWindow(object):
         return groupBox
 
     def settings_box(self):
-
         groupBox = QGroupBox()
         groupBox.setTitle('Settings')
         groupBox.setMaximumWidth(200)
+
         if platform.system() == 'Darwin':
             font_size = 10
             font_style = 'Arial'
@@ -252,11 +252,10 @@ class Ui_MainWindow(object):
             font_size = 8
             font_style = 'Arial'
         else:
-            # Todo: Test what setting is best on linux
             font_size = 10
             font_style = 'Arial'
 
-        # Create the widgets
+        # --- Existing Widgets (Unchanged) ---
         max_inter_time_line = QLabel("max. IPT<sub>Burst")
         max_inter_time_line.setFont(QFont(font_style, font_size))
         self.maxInterTime = QLineEdit()
@@ -298,7 +297,6 @@ class Ui_MainWindow(object):
         self.r0Box.setText('40')
         self.r0Box.setMaximumWidth(40)
 
-
         self.leeFilterCheck = QCheckBox()
         self.leeFilterCheck.setChecked(True)
         self.leeFilterCheck.setLayoutDirection(QtCore.Qt.RightToLeft)
@@ -337,7 +335,6 @@ class Ui_MainWindow(object):
         file_suffix_text = QLabel('File\nSuffix')
         file_suffix_text.setFont(QFont(font_style, font_size))
         self.fileSuffixBox = QLineEdit()
-        #self.fileSuffixBox.setMaximumWidth(100)
         self.fileSuffixBox.setMinimumWidth(95)
         self.fileSuffixBox.setText('1')
 
@@ -354,7 +351,6 @@ class Ui_MainWindow(object):
         self.CoreSelectBox = QLineEdit()
         self.CoreSelectBox.setMaximumWidth(40)
         self.CoreSelectBox.setText('Auto')
-
 
         self.thirtythirtyCheck = QCheckBox()
         self.thirtythirtyCheck.setLayoutDirection(QtCore.Qt.RightToLeft)
@@ -379,35 +375,40 @@ class Ui_MainWindow(object):
         self.tauALEXbox.setText('75')
         self.tauALEXbox.setMaximumWidth(40)
 
-        # tick box for threshold based burst filtering
+        # Tick box for threshold-based burst filtering
         self.threshTick = QCheckBox()
         self.threshTick.setLayoutDirection(QtCore.Qt.RightToLeft)
 
+        # --- New Burst Detection Method Selection ---
+        method_label = QLabel('Burst\nDetection:')
+        method_label.setFont(QFont(font_style, font_size))
 
+        self.method_select = QComboBox()
+        self.method_select.addItems(["Time-Based", "Intensity-Based"])
+        self.method_select.setCurrentIndex(0)  # Default to Time-Based
+        #self.method_select.setMaximumWidth(130)
+        self.method_select.setMinimumWidth(120)
 
-
-        # add widgets to grid
-
+        # --- Grid Layout: Keep All Original Widgets & Add New Method Selection ---
         grid = QGridLayout()
-        grid.addWidget(max_inter_time_line, 0,0,1,2)
+        grid.addWidget(max_inter_time_line, 0, 0, 1, 2)
         grid.addWidget(self.maxInterTime, 0, 2)
-        grid.addWidget(QLabel('ms'), 0,3)
+        grid.addWidget(QLabel('ms'), 0, 3)
 
-        grid.addWidget(min_inter_t_noise, 1, 0, 1,2)
+        grid.addWidget(min_inter_t_noise, 1, 0, 1, 2)
         grid.addWidget(self.minInterTimeNoise, 1, 2)
-        grid.addWidget(QLabel('ms'),1,3)
+        grid.addWidget(QLabel('ms'), 1, 3)
 
         grid.addWidget(self.minTotalTick, 2, 0, 1, 2)
         grid.addWidget(self.minTotal, 2, 2)
 
+        grid.addWidget(self.tauFRETtext, 3, 0, 1, 2)
+        grid.addWidget(self.tauFRETbox, 3, 2)
+        grid.addWidget(QLabel('µs'), 3, 3)
 
-        grid.addWidget(self.tauFRETtext, 3,0,1,2)
-        grid.addWidget(self.tauFRETbox, 3,2)
-        grid.addWidget(QLabel('µs'),3,3)
-
-        grid.addWidget(self.tauALEXtext, 4,0,1,2)
-        grid.addWidget(self.tauALEXbox, 4,2)
-        grid.addWidget(QLabel('µs'),4,3)
+        grid.addWidget(self.tauALEXtext, 4, 0, 1, 2)
+        grid.addWidget(self.tauALEXbox, 4, 2)
+        grid.addWidget(QLabel('µs'), 4, 3)
 
         grid.addWidget(gr_text, 5, 1, 2, 1)
         grid.addWidget(r0_text, 5, 2, 2, 1)
@@ -419,23 +420,19 @@ class Ui_MainWindow(object):
         grid.addWidget(self.leeFilterCheck, 7, 0)
         grid.addWidget(self.leeFilterBox, 7, 2)
 
-        grid.addWidget(self.flaCheckbox,8,0)
+        grid.addWidget(self.flaCheckbox, 8, 0)
 
-        grid.addWidget(file_suffix_text,9,0)
+        grid.addWidget(file_suffix_text, 9, 0)
         grid.addWidget(self.fileSuffixBox, 9, 1)
 
-        grid.addWidget(CoreSelectText, 10, 0)
-        grid.addWidget(self.CoreSelectBox, 10, 2)
+        grid.addWidget(method_label, 12, 0, 1, 2)
+        grid.addWidget(self.method_select, 12, 1)
 
-        grid.addWidget(self.thirtythirtyCheck, 11, 0)
-        grid.addWidget(self.refreshButton, 11, 2, 1, 2)
-
-
-
+        grid.addWidget(self.refreshButton, 13, 2, 1, 2)
 
         groupBox.setLayout(grid)
-
         return groupBox
+
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
