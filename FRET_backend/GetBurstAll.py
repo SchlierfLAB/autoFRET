@@ -711,6 +711,8 @@ def compute_final_statistic(Bursts, seperate_photons, boolTotal, threAveT, minGR
                           tauArrA_T,
                           [el[0] for el in TGR]]).T
 
+    # If IRF not given values appear to be NaN in final data (the ones which are not set to be 0 above)
+    BurstData = np.nan_to_num(BurstData, nan=0.0)
 
     return BurstData, accBursts
 def save_burst_data(pathname, suffix, BurstData, boolPostA, accBursts):
